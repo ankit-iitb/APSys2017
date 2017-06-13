@@ -1,0 +1,101 @@
+% \section{CPU Based Packet Processing}
+\section{Building Blocks}
+\label{section4}
+Various components of a commodity server can be used efficiently to get the good performance for network applications. CPU can perform out of the order execution when memory subsystem is busy fetching the data. We can exploit this fact to make CPU and memory subsystem work in parallel. We are using batching and prefetching to improve the performance of the application. Prefetching works more effectively when it is associated with batching. With proper batch size, we are making sure that CPU has enough work to do while memory subsystem is bringing the data into the cache. Detailed description about batching and prefetching is in section \ref{iobatching}, \ref{computationbatching}, \ref{prefetching}, and \ref{subbatching}.
+
+\subsection{Intel Data Plane Development Kit}
+There are two parts of DPDK\cite{DPDK}: 1) Set of libraries, and 2) Userspace poll mode driver. DPDK drivers work in poll mode to avoid interrupt overheads and applications use the libraries to receive, process, and transmit the packets. The userspace poll mode driver and the libraries are implemented efficiently to process the packets at line rate. DPDK is using many optimizations to work at such a high speed. We are omitting the generic details about these optimizations and can be read from the official documentation. 
+
+\subsection{Packet Processing Pipeline}
+\label{overview}
+There are mainly three stages in the network packet processing flow: Receive, Process, Transmit.
+\\
+\textbf{Receive:} After receiving data from physical layer, NIC puts the data in the buffer and then DMA engine transfers it in main memory through PCIe. Driver maintains the queue for received packets and pass the ownership to the application by reflecting it in the descriptors. When application makes the receive packets library calls, poll mode driver passes the packets to the userspace application. DPDK has library functions to RX, process, and TX packets in batches.
+\\
+\textbf{Process:} Lookup based applications are very common in packet processing and we are more interested in such applications. The typical flow for such application is : Header extraction, Lookup based on header field, and transmission based on the lookup result.
+\\
+\textbf{Transmit:} This stage is very similar to receive stage in reverse direction. 
+
+\subsection{I/O Batching}
+\label{iobatching}
+As described in section \ref{overview} RX and TX of a packet is a costly process. There is DMA overhead, PCIe overhead and packet buffer and descriptors management overhead associated with each packet receive and transmit. Packets can be transferred in batches instead of transferring one by one, which will amortize the cost among the packets in a batch. We can't increase the IO batch size to an arbitrarily large number because it is dependent on many factors like: number of available descriptors, available memory for storing the packets, and buffer size at NIC etc. For IO batching we are using DPDK poll mode driver which supports IO batching and has implemented the burst mode in an efficient way by using vector instructions.
+
+\subsection{Computation Batching}
+\label{computationbatching}
+For each packet processing there is a cost involved, an application does some sort of bookkeeping, executes many functions based on the application flow, and accesses various data structure. All this cost can be amortized among packets if we are doing all these operations in batches. In case of computation batching, all the packets pass through one stage before moving to the next stage. Instead of calling a function batch time, each function is called once and all the packets in the batch are processed together. It reduces the function call overhead. Data and instruction locality also increases because CPU executes the same portion of the code and accesses the same data structure for batch number of times before moving to next stage. Batching also allows the use of vector instructions to make packet processing more efficient.
+
+\subsection{Prefetching}
+\label{prefetching}
+If we know that some data will be used later in the program, it can be prefetched by the prefetch instruction exposed by the architecture. Software prefetching is an old concept and has been used extensively to improve the performance for different kind of applications. Software prefetching can degrade the performance of the application if not used wisely. In Algorithm \ref{lookup-algo} we are showing how prefetch can be used for lookup based network application. We need bucket where the key is present in the second loop and if it is not present it will stall. To avoid the stall we can prefetch the bucket in the first loop. This will reduce the total stall time and the performance of the application will increase.
+% after issuing MSHRs number of fetch instructions. 
+
+\begin{algorithm}[H]
+ \caption{HASH LOOKUP}
+ \label{lookup-algo}
+ \begin{algorithmic}[1]
+ \For{$i \leftarrow 1$ To $Batch Size$}
+     \State key-hash[i] = extract key and compute hash
+     \State prefetch(bucket-for-key-hash(key-hash[i]));
+ \EndFor
+ \\
+ \For{$j \leftarrow 1$ To $Batch Size$}
+     \State value[j] = hash-lookup(key-hash[j]);
+ \EndFor
+ \end{algorithmic}
+\end{algorithm}
+There is a harmony between prefetching and batching, prefetching without batching won't be very effective. It is due to batching that CPU is doing some operation on the next packet while memory subsystem is prefetching the data in parallel.
+
+\subsection{Sub-batching}
+\label{subbatching}
+Efficient use of Software prefetching is highly dependent on right prefetch distance.  Prefetch distance can be explained as CPU cycles between the prefetch instruction and the instruction where data is being used. If the prefetch distance is very small then we won't be able to reduce the memory stall and there is an additional overhead of issuing prefetch instruction. If the prefetch distance is too high then the data might not be in the cache when the application needs it.
+% \begin{table}[hbt]
+% \centering
+% \caption{Batching vs Prefetching}
+% \label{table1}
+% \begin{tabular}{|p{0.13\textwidth}|p{0.13\textwidth}|p{0.13\textwidth}|}
+% \hline
+%                                  & Data in Cache                  & Data not in Cache         \\ \hline
+% Less cycles for pre-lookup-computation  & Medium Batch Size              & Large Batch Size          \\ \hline
+% More cycles for pre-lookup-computation  & Extra Small Batch Size         & Small Batch Size          \\ \hline
+% \end{tabular}
+% \end{table}
+In the Algorithm \ref{lookup-algo}, pre-lookup-computation is key extraction and hash computation. For different applications pre-lookup-computation can take different number of cycles, if it is taking more number of cycles then we need to reduce the batch size to a value where the prefetch distance is suitable depending on the presence of data in cache. We can form the sub batches at lookup stage instead of changing the batch size at application level. \iffalse Summary of the same can be seen in Table \ref{table1}.\fi We will talk more about it in Section \ref{batchvstable}.
+
+\section{Optimal Batch Size}
+\label{optimalbatchsize}
+In this section, we are formulating the dependence between throughput and batch size. We are explaining the model form top to down to decide optimal batch size. Let
+\begin{align}
+B_{opt} &=  \text{arg}\,\min\limits_{(B_1, B_2)}\, (\Upsilon(B_1) + \Theta(B_2)) \label{bopt}
+\\
+\text{T} &= \frac{1}{\Upsilon(B_1) + \Theta(B_2)} \label{overall_throughput}
+\end{align}
+\\
+where $\Upsilon(.)$ and $\Theta(.)$ represents I/O processing and compute processing, time at given batch size for one packet, respectively. $\text{T}$ is overall processing throughput in packets per second.\\ \\
+$\Upsilon(.)$ will depend on PCI bandwidth, PCI latency, NIC, DMA engine etc.
+\begin{equation} 
+\label{nic_throughput}
+\Upsilon(B) = \Psi(\textrm{PCI, NIC, DMA engine, others})
+\end{equation}
+$\Theta(.)$ is directly proportional to total cycles CPUs takes to process a single packet. This includes cycles wasted by CPUs to wait for data to come from memory system. 
+\\
+\begin{equation} 
+\label{compute_througput}
+\Theta(B) \propto \Delta_{compute}(B) + \frac{\Delta_{stall}(B)}{B}
+\end{equation}
+Given batch size $B$, $\Delta_{compute}(B)$ represents number of cycles CPU is busy doing computation for a single packet and $\Delta_{stall}(B)$ represents number of cycles CPU  is waiting for memory operations to complete for all $B$ packets. As explained in Section \ref{prefetching}  and \ref{subbatching} CPU may stall if it needs a data which is not present in L1 cache. $\Delta_{compute}(.)$ can also vary with batch size due to increase in data and instruction locality in the memory system.
+\\
+$\Delta_{compute}(.)$ can be broken down into two useful terms, representing cycles which gets amortized and cycles which doesn't gets amortized due to batching.
+\\
+\begin{equation} 
+\label{cycles_compute}
+\Delta_{compute}(B) = \frac{\Delta_{shared}(B)}{B} + \Delta_{necessary}(B)
+\end{equation}
+Given batch size $B$, $\Delta_{necessary}(B)$ is unamortizable work that needs to be done per packet and $\Delta_{shared}(B)$ is work that is done once per batch and not per packet. For example, overheads for function calls gets amortized among the batch whereas packet header extraction needs to be done for every packet, thus, not amortizable.
+\\
+Average cycle stall per packet is the difference of average cycles memory system takes to bring data into caches for one packet and useful computation done on an average during that time for a packet.
+\\
+\begin{equation}
+\label{cycles_stall}
+\frac{\Delta_{stall}(B)}{B} = \Delta_{fetch}(B) - \frac{\Delta_{hide}(B)}{B}
+\end{equation}
+where $\Delta_{stall}(B)$ is the average latency of fetching data from memory system into caches and $\Delta_{hide}(B)$ is the work done while memory system is bringing data into caches. In Algorithm \ref{lookup-algo} CPU is doing pre-lookup-computation work for another packet in batch while memory subsystem is prefetching the required data. As explained in Section \ref{prefetching}, prefetching will reduce the overall stall time.

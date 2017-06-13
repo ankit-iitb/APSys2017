@@ -1,0 +1,5 @@
+\begin{abstract}
+Recently, the software routers are taking the center stage of replacing the traditional middleboxes in networking for their relative flexibility in development, deployment, and maintenance. DSLs for programming software routers have become an attractive choice, but the challenge of achieving line-rate for different workloads and platforms still persists. Focusing towards the development of the right compiler framework for optimization could bridge this gap between flexibility and performance.
+
+In this paper, we are implementing compiler based optimizations for software based packet processing and trying to minimize the gap between flexibility and performance. To show the improvement, we extend P4C\cite{Laki:2016:HSP:2934872.2959080} compiler to generate optimized DPDK\cite{DPDK} based applications for x86 platform. Our compiler is able to achieve upto 55\% higher throughput over P4C generated code and is on par with previous hand-tuned DPDK based software switches.
+\end{abstract}
