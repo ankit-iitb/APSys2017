@@ -46,6 +46,9 @@ There is a harmony between prefetching and batching, prefetching without batchin
 \subsection{Prefetch Distance and Batch Size}
 \label{subbatching}
 Efficient use of Software prefetching is highly dependent on right prefetch distance. Prefetch distance can be explained as CPU cycles between the prefetch instruction and the instruction where data is being used. If the prefetch distance is very small then we won't be able to reduce the memory stall and there is an additional overhead of issuing prefetch instruction. If the prefetch distance is too high then the data might not be in the cache when the application needs it. In the Algorithm \ref{lookup-algo}, pre-lookup-computation is key extraction and hash computation. For different applications pre-lookup-computation can take different number of cycles, if it is taking more number of cycles then we need to reduce the batch size to a value where the prefetch distance is suitable depending on the presence of data in cache. We can form the sub batches at lookup stage instead of changing the batch size at application level. We will talk more about it in Section \ref{batchvstable}.
+\\
+\\
+It can be observebed from discussion in Section \ref{section4} that NIC, CPU and memory system can work in parallel. If the NIC have enough descriptors to process it will send packets to PMD independent of application behavior. Application and memory can work parallelly if application have enough work to do before the data arrives in the L1 cache, e.g. pre-lookup computation in Algorithm \ref{lookup-algo}. The amount of prallelism between CPU and memory will depend upon prefetch distance or batch size.In summary we can need different batch size at NIC and application level for overall optimal performance. 
 
 \section{Optimal Batch Size}
 \label{optimalbatchsize}
