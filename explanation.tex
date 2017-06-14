@@ -25,35 +25,35 @@ For each packet processing there is a cost involved, an application does some so
 
 \subsection{Prefetching}
 \label{prefetching}
-If we know that some data will be used later in the program, it can be prefetched by the prefetch instruction exposed by the architecture. Software prefetching is an old concept and has been used extensively to improve the performance for different kind of applications. Software prefetching can degrade the performance of the application if not used wisely. In Algorithm \ref{lookup-algo} we are showing how prefetch can be used for lookup based network application. We need bucket where the key is present in the second loop and if it is not present it will stall. To avoid the stall we can prefetch the bucket in the first loop. This will reduce the total stall time and the performance of the application will increase.
+Software prefetching is an old concept and has been used extensively to improve the performance for memory bound applications. Prefetch allows the application to use memory and CPU in parallel e.g. CPU can do its work while memory system is bringing data into L1 cache. If we know that some data will be used later in the program, it can be prefetched by the prefetch instruction exposed by the architecture. In Algorithm \ref{lookup-algo} we are showing how prefetch can be used for lookup based network application. In line \ref{hash-lookup-line} we need bucket where the key is present. If we remove prefetch isntruction in Line \ref{prefetch-line} CPU will stall at Line \ref{hash-lookup-line} if the bucket is not present in L1 cache. To avoid the stall we can prefetch the bucket in the first loop. This will reduce the total stall time and the performance of the application will increase.
 
 \begin{algorithm}[H]
  \caption{HASH LOOKUP}
  \label{lookup-algo}
  \begin{algorithmic}[1]
  \For{$i \leftarrow 1$ To $Batch Size$}
-     \State key-hash[i] = extract key and compute hash
-     \State prefetch(bucket-for-key-hash(key-hash[i]));
+     \State key-hash[i] = extract key and compute hash; \label{hash-compute-line}
+     \State prefetch(bucket-for-key-hash(key-hash[i])); \label{prefetch-line}
  \EndFor
  \\
  \For{$j \leftarrow 1$ To $Batch Size$}
-     \State value[j] = hash-lookup(key-hash[j]);
+     \State value[j] = hash-lookup(key-hash[j]); \label{hash-lookup-line}
  \EndFor
  \end{algorithmic}
 \end{algorithm}
 There is a harmony between prefetching and batching, prefetching without batching won't be very effective. It is due to batching that CPU is doing some operation on the next packet while memory subsystem is prefetching the data in parallel.
 
-\subsection{Sub-batching}
+\subsection{Prefetch Distance and Batch Size}
 \label{subbatching}
-Efficient use of Software prefetching is highly dependent on right prefetch distance.  Prefetch distance can be explained as CPU cycles between the prefetch instruction and the instruction where data is being used. If the prefetch distance is very small then we won't be able to reduce the memory stall and there is an additional overhead of issuing prefetch instruction. If the prefetch distance is too high then the data might not be in the cache when the application needs it. In the Algorithm \ref{lookup-algo}, pre-lookup-computation is key extraction and hash computation. For different applications pre-lookup-computation can take different number of cycles, if it is taking more number of cycles then we need to reduce the batch size to a value where the prefetch distance is suitable depending on the presence of data in cache. We can form the sub batches at lookup stage instead of changing the batch size at application level. We will talk more about it in Section \ref{batchvstable}.
+Efficient use of Software prefetching is highly dependent on right prefetch distance. Prefetch distance can be explained as CPU cycles between the prefetch instruction and the instruction where data is being used. If the prefetch distance is very small then we won't be able to reduce the memory stall and there is an additional overhead of issuing prefetch instruction. If the prefetch distance is too high then the data might not be in the cache when the application needs it. In the Algorithm \ref{lookup-algo}, pre-lookup-computation is key extraction and hash computation. For different applications pre-lookup-computation can take different number of cycles, if it is taking more number of cycles then we need to reduce the batch size to a value where the prefetch distance is suitable depending on the presence of data in cache. We can form the sub batches at lookup stage instead of changing the batch size at application level. We will talk more about it in Section \ref{batchvstable}.
 
 \section{Optimal Batch Size}
 \label{optimalbatchsize}
 In this section, we are formulating the dependence between throughput and batch size. We are explaining the model form top to down to decide optimal batch size. Let
 \begin{align}
-B_{opt} &=  \text{arg}\,\min\limits_{(B_1, B_2)}\, (\Upsilon(B_1) + \Theta(B_2)) \label{bopt}
+B_{opt} &=  \text{arg}\,\max\limits_{(B_1, B_2)}\, (\Upsilon(B_1) , \Theta(B_2)) \label{bopt}
 \\
-\text{T} &= \frac{1}{\Upsilon(B_1) + \Theta(B_2)} \label{overall_throughput}
+\text{T} &= \frac{1}{\max (\Upsilon(B_1) , \Theta(B_2))} \label{overall_throughput}
 \end{align}
 \\
 where $\Upsilon(.)$ and $\Theta(.)$ represents I/O processing and compute processing, time at given batch size for one packet, respectively. $\text{T}$ is overall processing throughput in packets per second.\\ \\
