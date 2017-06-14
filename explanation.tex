@@ -51,9 +51,9 @@ Efficient use of Software prefetching is highly dependent on right prefetch dist
 \label{optimalbatchsize}
 In this section, we are formulating the dependence between throughput and batch size. We are explaining the model form top to down to decide optimal batch size. Let
 \begin{align}
-B_{opt} &=  \text{arg}\,\min\limits_{(B_1, B_2)}\, (\Upsilon(B_1) + \Theta(B_2)) \label{bopt}
+B_{opt} &=  \text{arg}\,\max\limits_{(B_1, B_2)}\, (\Upsilon(B_1) , \Theta(B_2)) \label{bopt}
 \\
-\text{T} &= \frac{1}{\Upsilon(B_1) + \Theta(B_2)} \label{overall_throughput}
+\text{T} &= \frac{1}{\max (\Upsilon(B_1) , \Theta(B_2))} \label{overall_throughput}
 \end{align}
 \\
 where $\Upsilon(.)$ and $\Theta(.)$ represents I/O processing and compute processing, time at given batch size for one packet, respectively. $\text{T}$ is overall processing throughput in packets per second.\\ \\
