@@ -9,15 +9,15 @@ There are two parts of DPDK\cite{DPDK}: 1) Set of libraries, and 2) Userspace po
 \label{overview}
 There are mainly three stages in the network packet processing flow: Receive, Process, Transmit.
 \\
-\textbf{Receive:} After receiving data from physical layer, NIC puts the data in the buffer and then DMA engine transfers it in main memory through PCIe. Driver maintains the queue for received packets and pass the ownership to the application by reflecting it in the descriptors. When application makes the receive packets library calls, poll mode driver passes the packets to the userspace application. DPDK has library functions to RX, process, and TX packets in batches.
+\textbf{Receive:} After receiving data from physical layer, NIC puts the data in the buffer and then DMA engine transfers it in main memory through PCIe. Driver maintains the queue for received packets and pass the ownership to the application by reflecting it in the descriptors. When application makes a call to receive packets, poll mode driver(PMD) passes the packets to the userspace application. DPDK has library functions to RX and TX packets in batches. Descriptors are shared by NIC and PMD as a Single  Producer Single Consumer Queue and they both polls other ends of it independently.
 \\
-\textbf{Process:} Lookup based applications are very common in packet processing and we are more interested in such applications. The typical flow for such application is : Header extraction, Lookup based on header field, and transmission based on the lookup result.
+\textbf{Process:} Lookup based applications are very common in packet processing and we are more interested in such applications. The typical flow for such application involves header extraction, lookup based on header field(s), and transmission based on the lookup result.
 \\
 \textbf{Transmit:} This stage is very similar to receive stage in reverse direction. 
 
 \subsection{I/O Batching}
 \label{iobatching}
-As described in section \ref{overview} RX and TX of a packet is a costly process. There is DMA overhead, PCIe overhead and packet buffer and descriptors management overhead associated with each packet receive and transmit. Packets can be transferred in batches instead of transferring one by one, which will amortize the cost among the packets in a batch. We can't increase the IO batch size to an arbitrarily large number because it is dependent on many factors like: number of available descriptors, available memory for storing the packets, and buffer size at NIC etc. For IO batching we are using DPDK poll mode driver which supports IO batching and has implemented the burst mode in an efficient way by using vector instructions.
+It can be noted in the section \ref{overview} that RX and TX of a packet is a costly process. There is DMA overhead, PCIe overhead and packet buffer and descriptors management overhead associated with each packet receive and transmit. Packets can be transferred in batches instead of transferring one by one, to amortize the cost among the packets in a batch. But, the primary bottleneck for the NIC performance at large batch sizes becomes the availability of descriptors for it to process. We are using DPDK based poll mode driver which supports IO batching and has implemented the batched receive and transmit of packets in an efficient way by using vector instructions.
 
 \subsection{Computation Batching}
 \label{computationbatching}
