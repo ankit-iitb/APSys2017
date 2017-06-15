@@ -9,7 +9,7 @@ Many Domain Specific Languages like P4\cite{Bosshart:2014:PPP:2656877.2656890}, 
 The key issues in software routers are due to the overheads in memory stalls and redundant operations like function calls that waste CPU cycles. On Intel x86 platforms, memory access latency is 90-130 ns. It is often the case that ineffective coding styles cause more memory accesses than necessary thus increasing CPU cycles per packet.  In addition, multiple packets during processing pass through the same function flow. Thus there is a benefit in amortizing the overheads in function calls. In this work, we leverage batching as an efficient means to hide memory stalls and amortize redundant operations. We also demonstrate forwarding performance improvements by adding batching capabilities to the P4C compiler. The primary contributions of this paper are:
 
 \begin{enumerate}
-\item Developed a platform agnostic mathematical formulation that allows one to investigate the benefits of batching theoretically.
+\item Developed a platform agnostic mathematical relation that allows one to investigate the benefits of batching and prefetching.
 \item Extended the P4C compiler for the Intel x86 platform to generate router code. Our compiler generates batched code of the target router.
 \item Detailed performance evaluation and comparison of popular network applications like L2fwd, IPv4, IPv6, NDN with other popular manually optimized applications.
 \end{enumerate}
