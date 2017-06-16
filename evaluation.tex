@@ -6,15 +6,13 @@ Evaluation section is divided into four types of experiments: First, we are show
 \textbf{Server Specifications:} We are using Dell Poweredge R430 Rack Server, based on Haswell architecture. This server has two sockets occupied with Intel Xeon E5-2640 
 v3\cite{xeon} processor. Each processor has 8 physical and each core is capable of running at 2.60 GHz. Cores on a socket share 20 MB cache. Sockets are connected with 2 QPIs(Quick Path Interconnect), each capable of 8 GT/s. Two dual port NICs,1 Intel x520 and 1 Intel x540, are connected to Socket 0 through PCIe 2.0 and each port can work at 10Gbps. Total main memory available is 64 GB, spread across two sockets in a NUMA fashion.
 \\
-\\
 \textbf{Software:} Our servers are running Ubuntu 14.04 LTS operating system with 4.4.0-59 Linux kernel version. We are using DPDK version 16.07 with IXGBE poll mode driver to
 interact with the underlying NICs. 
 \\
-\\
 \textbf{Traffic Generator:} We are using same hardware and software on both the servers and Pktgen-DPDK\cite{pktgen} version 3.1.0 to generate different kind of packets for different applications used in the experiments. Pktgen-DPDK\cite{pktgen} can generate the 64 bytes packet size traffic at line rate i.e 14.8 Mpps for 10 Gbps port. We are able to generate traffic at 59 Mpps for four ports with 64 bytes packet size. We have extended Pktgen-DPDK\cite{pktgen} to put random source and destination address depending on the application.
 \\
-\\
 \textbf{Applications:} In this part we are specifying the applications we are using for different experiments. We have written applications in P4\cite{Bosshart:2014:PPP:2656877.2656890} and extended P4C\cite{Laki:2016:HSP:2934872.2959080} compiler to generate code with the above mentioned optimizations. P4C\cite{Laki:2016:HSP:2934872.2959080} is generating DPDK\cite{DPDK} based applications which are later compiled with gcc to get the target binary. We are using similar applications as used in \cite{189006} for comparing our results with their CPU based implementation.
+
 \begin{enumerate}
 \item \textbf{Layer 2 Switch:} In this application we are using two hash tables to store the mapping between SMAC/DMAC and value. Each packet is going through two lookup stages, one for SMAC and one for DMAC. We are putting 16 Million entries in the table for the experiments unless otherwise specified for some experiment. We are using Intel DPDK's implementation for various hash table operations.
 \item \textbf{IPV4 Forwarding:} In this application we are performing LPM lookup on destination IP address to get the forwarding port. We are using Intel DPDK's implementation for LPM related operations for IPv4 Forwarding and IPv6 Forwarding application. We are populating the forwarding table with 527,961 prefixed used by \cite{189006}.
