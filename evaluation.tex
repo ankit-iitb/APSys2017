@@ -250,33 +250,70 @@ IPv6 packet throughput is slightly lower than others, because it uses larger
 
 
 \section{Discussion}
-\subsection{TRIE Compression}
-In this experiment we enabled the DIR24-8\cite{Gupta98routinglookups} based DPDK LPM6 library to use TRIE compression. The number of steps involved in DIR24-8 based LPM6 matching algorithm is proportional to IPv6 prefix length and in each step, algorithm accesses a new TRIE node which is an expensive memory operation. In real world scenario, IPv6 prefixes can be stored in compressed form in TRIEs either because they are unique or because they have common prefixes. In compression algorithm, we have merged a child node with its parent if it is the only child of its parent.
-\\
-\textbf{Experiment:} We have populated 20,000 IPv6 prefixes, all having length 48, with varying degree of compression possible.
-\\
-\textbf{Results:} In the best case, when there were three lookups saving on an average, we have got 38\% higher throughput over DIR24-8 based TRIE and in the worst case, when there is no compression possible, compressed TRIE showed only a dip of 3.3\% in overall throughput. On an average, with 1.25 lookups saving, we got 16.1\% higher throughput than DPDK LPM6 lookup algorithm.
+While we restricted our discussion to batching and sub-batching, compiler
+transformations can be much more sophisticated. For example, the choice
+of data-structure to maintain and lookup the table, is often critical
+to the CPU speed of the application. If the application is CPU-bound, then
+it makes sense to try and optimize the choice of data-structure.
+We believe that existing
+work in the realm of data-representation synthesis in programming languages
+\cite{data_representation_synthesis, concurrent_data_representation_synthesis},
+can be leveraged effectively in this setting. We discuss one such
+experiment where we optimized the trie data structure used for IPv6 longest
+prefix match, to reduce the number of average memory accesses per packet.
 
+We implemented longest-prefix match lookup based on a compressed trie, and
+experimented with our IPv6 application, albeit with
+20,000 IPv6 prefixes, all having length 48.
+We save around 1.25 memory accesses per packet for this application, resulting in 38\%
+higher throughput . In general, the required transformations are highly dependent
+on the application (e.g., L2 forwarding vs. IPv6 lookup), and the data (e.g.,
+table size), and these characteristics could change over time.
+We think that this argues for an automatic adaptive optimization engine, like the one
+we have prototyped inside P4C, to be able to efficiently utilize the available hardware
+resources.
+%In our L2 forwarding example, there are two table lookups, both of which can potentially result
+%in main-memory access (and CPU stalls). Indeed the CPU stalls only occur if the lookup table
+%cannot fit in memory {\em and} the entry being looked-up is not already present in the cache.
+%Both these criteria are impossible to judge statically, and an automatic compiler-based
+%approach enables online dynamic code regeneration to adapt to the workload needs.
 
-
-\subsection{Scalability}
+%\subsection{TRIE Compression}
+%In this experiment we enabled the DIR24-8\cite{Gupta98routinglookups} based DPDK LPM6 library to use TRIE compression. The number of steps involved in DIR24-8 based LPM6 matching algorithm is proportional to IPv6 prefix length and in each step, algorithm accesses a new TRIE node which is an expensive memory operation. In real world scenario, IPv6 prefixes can be stored in compressed form in TRIEs either because they are unique or because they have common prefixes. In compression algorithm, we have merged a child node with its parent if it is the only child of its parent.
+%\\
+%\textbf{Experiment:} We have populated 20,000 IPv6 prefixes, all having length 48, with varying degree of compression possible.
+%\\
+%\textbf{Results:} In the best case, when there were three lookups saving on an average, we have got 38\% higher throughput over DIR24-8 based TRIE and in the worst case, when there is no compression possible, compressed TRIE showed only a dip of 3.3\% in overall throughput. On an average, with 1.25 lookups saving, we got 16.1\% higher throughput than DPDK LPM6 lookup algorithm.
+%
+%
+%
+%\subsection{Scalability}
 \section{Related Work}
 \label{relatedwork}
-\textbf{CPU based packet processing:} RouteBricks\cite{dobrescu2009routebricks} is one of the first paper in this area. They exploited various components in a commodity server to achieve 35 Gbps throughput for Layer 3 Forwarding. They used both inter-server and intra-server optimizations to achieve this throughput.
-\\
-\textbf{Manual optimizations:} There are many papers where authors have come up with different kind of manual optimizations to show the improvement in the performance. Batching\cite{dobrescu2009routebricks, 189006, Kim:2012:PBC:2349896.2349910, Zhou:2013:SHP:2535372.2535379} has been used extensively by authors, however, these papers are determining the batch size by empirical analysis. \cite{189006, Zhou:2013:SHP:2535372.2535379} are exploiting the fact that CPU and Memory subsystem can work in parallel and memory stall can be minimized by issuing the software prefetches before actually using the data. However, it is difficult to use these manual optimizations each time we are writing a packet processing application.
-\\
-\textbf{Compiler optimizations:} Shangri-La \cite{Chen:2005:SAH:1065010.1065038} generates optimized binary for network processor and showing that the generated binary is working as good as hand-tuned code. \cite{Dobrescu:2010:CPM:1921151.1921154} talks about the importance of doing the optimizations in the compiler rather than hand-tuning the same thing for different applications. The main focus of paper \cite{Dobrescu:2010:CPM:1921151.1921154} is to automating the decision of breaking the application in parallel components to achieve high throughput.
-Due to space constraint, we are not mentioning papers related to various kind of software based packet processors and different DSLs for writing the network applications.
+There has been a plethora of related work on CPU-based packet processing
+and related programming models, including Click \cite{click} and RouteBricks \cite{dobrescu2009routebricks}.
+Manual optimizations to improve the performance of packet processing algorithms \cite{dobrescu2009routebricks, 189006, Kim:2012:PBC:2349896.2349910, Zhou:2013:SHP:2535372.2535379} have also been has been studied extensively.
+In contrast, our work takes a compiler-centric approach to this problem, targetting micro-architectural
+optimizations, by systematically exploring the space of potential configurations. Our results surprisingly
+show performance improvements over these previous papers. While our approach is aimed at automatic code generation from a high-level
+specification, most previous work involved manual optimizations for individual applications. We have already compared our work
+with some of the most relevant previous work through our experiments.
 
-In our L2 forwarding example, there are two table lookups, both of which can potentially result
-in main-memory access (and CPU stalls). Indeed the CPU stalls only occur if the lookup table
-cannot fit in memory {\em and} the entry being looked-up is not already present in the cache.
-Both these criteria are impossible to judge statically, and an automatic compiler-based
-approach enables online dynamic code regeneration to adapt to the workload needs.
+%by authors, however, these papers are determining the batch size by empirical analysis. \cite{189006, Zhou:2013:SHP:2535372.2535379} are exploiting the fact that CPU and Memory subsystem can work in parallel and memory stall can be minimized by issuing the software prefetches before actually using the data. However, it is difficult to use these manual optimizations each time we are writing a packet processing application.
 
+Previous work in compiler optimization has close parallels with our work too.
+Shangri-La et. al. \cite{Chen:2005:SAH:1065010.1065038} generate an
+optimized binary for a specialized {\em network processor}, and show that the generated binary works as
+well as hand-tuned code. Dobrescu et. al. \cite{Dobrescu:2010:CPM:1921151.1921154} automate the decision
+of splitting an application into parallel components to achieve high throughput. Previous work on
+data-representation synthesis \cite{data_representation_synthesis, concurrent_data_representation_synthesis}
+involves automatically inferring the optimal data structures and schedule for a high-level program
+specification. Unlike this previous work, our focus on network processing pipelines enables
+more domain-specific optimizations, and deeper micro-architectural modeling for better performance.
 
+While our initial efforts are aimed at optimization and performance modeling, we hope
+to extend this work, towards developing an adaptive optimizing compiler for packet-processing pipelines.
 
-\section{Conclusion}
-\label{section6} 
-The goal of this paper is to find the efficient batch size and right prefetch distance to use the underlying hardware efficiently and to improve the application performance. In the evaluation section, we are showing that per core performance for different applications is on par with hand-tuned optimized applications and applications are scaling with the number of cores. It saves a lot of time and efforts, and we don't need to think about the code flow for different types of applications and the possible bugs due to manual intervention. We believe that DSLs won't be very useful if we are unable to develop good compilers. The actual power of DSLs can only be realized when the compilers can generate the optimized target which is on par with hand-tuned code.
+%\section{Conclusion}
+%\label{section6} 
+%The goal of this paper is to find the efficient batch size and right prefetch distance to use the underlying hardware efficiently and to improve the application performance. In the evaluation section, we are showing that per core performance for different applications is on par with hand-tuned optimized applications and applications are scaling with the number of cores. It saves a lot of time and efforts, and we don't need to think about the code flow for different types of applications and the possible bugs due to manual intervention. We believe that DSLs won't be very useful if we are unable to develop good compilers. The actual power of DSLs can only be realized when the compilers can generate the optimized target which is on par with hand-tuned code.
