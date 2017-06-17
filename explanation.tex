@@ -1,7 +1,8 @@
 \section{An illustrative example}
 \label{Buildingblocks}
 We illustrate the tradeoffs involved in implementing a packet-processing
-pipeline, using a motivating example of the L2 packet forwarding application.
+pipeline on general-purpose
+hardware, using an example of the L2 packet forwarding application.
 At the high-level specification, the application involves input streams
 of packets (one stream per input NIC) converging
 to a processing node that looks up the packets' MAC addresses (source
@@ -27,8 +28,9 @@ application: NIC subsystem, CPU, and Memory subsystem. Figure~\ref{fig:overviewf
 illustrates the data-flow at the hardware level. The NIC is involved in reading the packets
 off the wire and storing them into main memory. In our experiments, a NIC's input bandwidth
 is upper-bounded by 10Gbps, however, its bandwidth to memory is usually much higher\footnote{The
-total PCIe bandwidth to main memory is around XXX, which gets shared across multiple NICs. For
-all our experiments, except one (XXX), the total PCIe bandwidth remains unsaturated.}. The latency
+total PCIe bandwidth to main memory in our experiments
+is around 8 GT/s, which gets shared across multiple NICs. For
+all our experiments, except one (IPv4), the total PCIe bandwidth remains unsaturated.}. The latency
 from NIC to main memory is usually long (i.e., the NIC-memory DMA interface is a high-bandwidth
 high-latency interface), and so it is important to allow multiple
 packets in flight from NIC to memory, to ensure effective bandwidth utilization across the
@@ -36,7 +38,7 @@ NIC-memory DMA interface. To realize this parallelism, we need {\em batching}, b
 that multiple
 packets are consumed/produced to the NIC's ring buffer in one shot. This allows the NIC to initiate
 multiple PCIe transactions in parallel, thus hiding the round-trip NIC-memory latency. This
-available parallelism at the NIC-memory interface is labeled as (1) %XXX
+available parallelism at the NIC-memory interface is labeled as \textcircled{1}
 in Figure~\ref{fig:overviewfigure}.
 
 The next step in each packet processing pipeline is the actual logic.
@@ -61,7 +63,8 @@ memory accesses (the ones that are likely to result in a cache-miss) by hand.
 
 We show that memory-level parallelism can be exploited through {\em sub-batching} (a sub-batch
 is created within a larger batch that was required to efficiently NIC-memory bandwidth), for this
-CPU-memory interface. Sub-batching involves processing multiple packets (of sub-batch size) at
+CPU-memory interface (\textcircled{2} in Figure~\ref{fig:overviewfigure}). Sub-batching
+involves processing multiple packets (of sub-batch size) at
 each step of the processing logic.
 Sub-batching ensures that multiple independent lookups (if any) can be close-enough, such that
 memory-level parallelism gets exploited.
