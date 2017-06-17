@@ -106,11 +106,11 @@ sub\hspace{0.2cm}{\bf app} \{ &  sub\hspace{0.2cm}{\bf app} \{\\
 \begin{tabular}[b]{l|l}
 sub\hspace{0.2cm}{\bf process\_packet}(p) \{ & sub\hspace{0.2cm}{\bf process\_packet}(p) \{\\
 \hspace{0.3cm}for (i = 0; i < B; i++) \{ &\hspace{0.3cm}for (i = 0; i < B; i+=b) \{\\
-\hspace{0.3cm}t1 = lookup\_table1(p[i]); &\hspace{0.6cm}for (j = i; j < i+b; j++)\\
-\hspace{0.3cm}t2 = lookup\_table2(p[i], t1); & \hspace{0.9cm}t1[j-i] = lookup\_table1(p[j]);\\
-\hspace{0.3cm}\ldots &\hspace{0.6cm}for (j = i; j < i+b; j++)\\
-\} & \hspace{0.9cm}t1[j-i] = lookup\_table2(p[j], t1[j-i]);\\
-&\hspace{0.6cm}\ldots\\
+\hspace{0.6cm}t1 = lookup\_table1(p[i]); &\hspace{0.6cm}for (j = i; j < i+b; j++)\\
+\hspace{0.6cm}t2 = lookup\_table2(p[i], t1); & \hspace{0.9cm}t1[j-i] = lookup\_table1(p[j]);\\
+\hspace{0.6cm}\ldots &\hspace{0.6cm}for (j = i; j < i+b; j++)\\
+\hspace{0.3cm}\} & \hspace{0.9cm}t1[j-i] = lookup\_table2(p[j], t1[j-i]);\\
+\}&\hspace{0.6cm}\ldots\\
 &\hspace{0.3cm}\}\\
 &\}\\
 \end{tabular}
