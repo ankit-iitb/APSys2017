@@ -1,5 +1,34 @@
 \begin{abstract}
-Recently, the software routers are taking the center stage of replacing the traditional middleboxes in networking for their relative flexibility in development, deployment, and maintenance. DSLs for programming software routers have become an attractive choice, but the challenge of achieving line-rate for different workloads and platforms still persists. Focusing towards the development of the right compiler framework for optimization could bridge this gap between flexibility and performance.
+Software packet processing is increasingly commonplace, especially
+for software-defined networking constructs. Previous work has
+investigated methods to efficiently map packet processing pipelines
+to general-purpose processor architectures. Concurrently, novel
+high-level domain-specific
+languages (DSLs) for specifying modern packet processing
+pipeline functionality, are emerging (e.g., P4 \cite{p4}).
+An attractive goal is develop
+a compiler that can automatically map a high-level
+pipeline specification (specified in a high-level DSL) to an
+underlying machine architecture. Ideally, the compiler should automatically
+exploit the available parallelism, make intelligent scheduling decisions,
+and adapt to the workload needs in an online fashion, to provide maximum
+performance. An important pre-requisite for the
+development of such a compiler, is a
+performance model of the underlying machine architecture, for
+the applications of interest.
 
-In this paper, we are implementing compiler based optimizations for software based packet processing applications and trying to minimize the gap between flexibility and performance. To show the improvement, we extend P4C\cite{Laki:2016:HSP:2934872.2959080} compiler to generate optimized DPDK\cite{DPDK} based applications for x86 platform. Our compiler is able to achieve upto 55\% higher throughput over P4C generated code and is on par with previous hand-tuned DPDK based software switches.
+We report our experiences with adding an optimizer
+to the P4C compiler \cite{Laki:2016:HSP:2934872.2959080}, which
+compiles a high-level P4 program to a lower-level C-based implementation that runs
+with the DPDK infrastructure \cite{DPDK}, and gets eventually executed
+on a multi-socket x86 machine. We make two contributions: (a) we show
+that significant performance improvements (up to 55\%) can be gained by adding
+scheduling and prefetching
+optimizations to the P4C compiler; and (b) we develop a performance
+model for reasoning about
+the expected throughput and latency of a packet-processing workload, on a
+modern machine architecture. Our model can be used by a compiler,
+to reason about the expected
+performance of a packet-processing workload for different code configurations, and
+can thus be used to optimize the generated code accordingly.
 \end{abstract}
