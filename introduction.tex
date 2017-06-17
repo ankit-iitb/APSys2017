@@ -35,7 +35,7 @@ the DMA bandwidth between NIC and main memory; and (2) efficiently exploiting th
 parallelism between CPU and main memory. For the latter, we also evaluate prefetching to minimize
 cache-miss stalls. Finally, we rely on existing C compilers (e.g., gcc) to automatically optimize
 the generated code to efficiently utilize the CPU processor (e.g., by maximizing SIMD
-and instruction-level parallelism). We experiment with several code configurations involving varying
+and instruction-level parallelism ILP). We experiment with several code configurations involving varying
 degrees of available parallelism to DMA channels, and to CPU-memory channels. We show
 improvements over previously-published performance results for similar programs, and develop a model
 for reasoning about performance in this setting. We have integrated our model into the

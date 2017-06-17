@@ -109,6 +109,14 @@ In this experiment we enabled the DIR24-8\cite{Gupta98routinglookups} based DPDK
 \textbf{Compiler optimizations:} Shangri-La \cite{Chen:2005:SAH:1065010.1065038} generates optimized binary for network processor and showing that the generated binary is working as good as hand-tuned code. \cite{Dobrescu:2010:CPM:1921151.1921154} talks about the importance of doing the optimizations in the compiler rather than hand-tuning the same thing for different applications. The main focus of paper \cite{Dobrescu:2010:CPM:1921151.1921154} is to automating the decision of breaking the application in parallel components to achieve high throughput.
 Due to space constraint, we are not mentioning papers related to various kind of software based packet processors and different DSLs for writing the network applications.
 
+In our L2 forwarding example, there are two table lookups, both of which can potentially result
+in main-memory access (and CPU stalls). Indeed the CPU stalls only occur if the lookup table
+cannot fit in memory {\em and} the entry being looked-up is not already present in the cache.
+Both these criteria are impossible to judge statically, and an automatic compiler-based
+approach enables online dynamic code regeneration to adapt to the workload needs.
+
+
+
 \section{Conclusion}
 \label{section6} 
 The goal of this paper is to find the efficient batch size and right prefetch distance to use the underlying hardware efficiently and to improve the application performance. In the evaluation section, we are showing that per core performance for different applications is on par with hand-tuned optimized applications and applications are scaling with the number of cores. It saves a lot of time and efforts, and we don't need to think about the code flow for different types of applications and the possible bugs due to manual intervention. We believe that DSLs won't be very useful if we are unable to develop good compilers. The actual power of DSLs can only be realized when the compilers can generate the optimized target which is on par with hand-tuned code.
