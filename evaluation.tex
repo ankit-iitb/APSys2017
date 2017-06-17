@@ -1,9 +1,10 @@
 \section{Evaluation}
 \label{evaluation}
-We perform experiments to answer two main questions: (a) How much performance improvement is possible through carefully tuning the batchsize $B$ and
-the sub-batchsize $b$?  We find significant performance improvements. (b) Can we develop a performance model from the experimental data, to generalize our results for automatic
+We perform experiments to answer two main questions: (a) How much performance improvement is possible through carefully tuning the batch-size $B$ and
+the sub-batch-size $b$?  (b) Can we develop a performance model from the experimental data, to generalize our results for automatic
 optimization by a compiler
-optimizer, for an arbitrary packet processing pipeline. We develop a preliminary model to explain our current results. We integrate our model into P4C
+optimizer, for an arbitrary packet processing pipeline. We develop a preliminary model to explain our current results. We have
+integrated our model into P4C
 to automatically optimize the applications used in this paper.
 
 %Evaluation section is divided into four types of experiments: First, we are showing the effect of batching and batching plus prefetching for each application. Second, we are comparing our applications with the same application with hand-tuned optimizations published in different papers. By doing this we are showing that automatic optimizations can work as good as hand-tuned optimizations. Third, we are running the applications with different number of cores to show that the applications are scaling linearly with the number of cores. Fourth, we are comparing the throughput by changing the batch size and table size for L2FWD application to show the relation among batch size, table size, and throughput. With this experiment, we are also making sure that our model is working the same way we are expecting.
@@ -73,7 +74,7 @@ the case when the sub-batch-size $b=1$, i.e., no sub-batching.
 
 There are a few conclusions to draw from this plot: (1) Expectedly, throughput is generally higher
 for smaller tables than for larger tables. (2) For all table sizes, the throughput usually increases with
-increasing $B$, due to better exploitation of DMA bandwidth. (3) A batch-size beyond 128, usually results in
+increasing $B$ for $B<128$, due to better exploitation of DMA bandwidth. (3) A batch-size beyond 128, usually results in
 decreased throughput due to greater stress on the caching subssystem. (4) Sub-batching improves the throughput
 for larger table-sizes, but does not improve throughput for smaller table sizes. This is expected
 because sub-batching benefits from memory-level parallelism. For small table-sizes, the main-memory
@@ -103,13 +104,13 @@ that if the table-size is less than, or equal to 256 entries, the throughput
 is large (indicating that many table accesses will be cache misses), the
 increasing sub-batch-size, generally improves throughput. If the sub-batch-size
 is too large, (e.g., if it is 128 in this case), the performance usually dips
-a bit due to increased pressure on the caching subsystem, caused by the
+due to increased pressure on the caching subsystem, caused by the
 increased memory footprint.
 
 These results confirm that while sub-batching is useful for memory-bound
 applications, it is not effective (or sometimes even harmful) for
 compute-bound applications. We try and capture this formally in our
-performance model, discussed later.
+performance model, discussed next.
 
 %In Figure \ref{tablesize}, we are showing the relation between throughput and batch size for different number of entries in the lookup table. We are using L2-FWD application with one lookup for this experiment. In the graph, solid lines are representing the results for batching plus prefetching case and dotted lines are representing batching only results. In Section \ref{batchingsubsection} we will talk about the effect of batching on the application with varying number of entries in the table and in Section \ref{prefetchingsubsection} we will take both batching and prefetching into consideration.
 %In this experiment we are using IO and Compute batch size 128 and changing the subbatch size to confirm the effect of subbatching. As we can see in the Figure\ref{subbatchfigure} we are able to get improved performance in case of subbatches used in L2Fwd application.
@@ -146,16 +147,18 @@ packet is expected to traverse all three components).
 
 With batching, we allow multiple in-flight packets on the DMA interface, and
 hence increase the parallelism and service rate $d$. If the batch-size is $B$, then
-the ideal improvement in the service rate of the DMA interface would be linear ($B*d$).
-However, the interface is not fully parallelizable, and so the service rate of
-the DMA interface increases as some function $f_{dma}(d, B)$. The plot in Figure~\ref{fig:XXX}
+the ideal improvement in the service rate of the DMA interface would be $B*d$ (i.e., linear
+scaling).
+However, in practice,
+the interface is not fully parallelizable, and so the service rate of
+the DMA interface increases as some function $f_{dma}(d, B)$. The plot in Figure~\ref{fig:tablesize}
 can be used to roughly approximate the shape of this function $f_{dma}$ with increasing value of $B$.
 
 Similarly, with sub-batching, we allow multiple in-flight memory requests on the
 CPU-memory interface, and hence increase the service rate $m$. If the batch-size is $b$,
-let's assume that the service rate of the CPU-memory interface is denoted by
+assume that the service rate of the CPU-memory interface is denoted by
 a function $f_{mem}(m, b)$. The shape of $f_{mem}$ can be roughly approximated using
-the plots in Figure~\ref{fig:XXX}. As we can see, the shape of both functions $f_{dma}$
+the plots in Figure~\ref{fig:subbatchfigure}. As we can see, the shape of both functions $f_{dma}$
 and $f_{mem}$ are dependent on the characteristics of the application. For example,
 if the application is compute-bound, $f_{mem}$ typically decreases with increasing $b$.
 On the other hand, $f_{mem}$ increases with increasing $b$, for memory-bound applications,
@@ -169,7 +172,7 @@ $$
 min(c, f_{dma}(m, b), f_{mem}(d, B))
 $$
 
-Thus, a compiler should first estimate the characteristics of the application. For example,
+Thus, a compiler needs to first estimate the characteristics of the application. For example,
 the compiler may run the application for different configurations in an offline
 phase, to make conclusions about the degree of compute-boundedness ($c$), memory-boundedness ($m$),
 and I/O-boundedness ($d$) of that application. Then, given a machine, the compiler may
@@ -192,11 +195,11 @@ related work, G-Opt, aimed at extracting memory-level parallelism through manual
 and comparable
 hand-optimized code available as a part of the DPDK distribution.
 To ensure fair comparisons, we verify that the number of lookups and number of entries in the table(s) is same in all experiments.
-In cases where a hand-optimized version or GOpt results are not available, we
+In cases where a hand-optimized version or GOpt results are not available,
 the corresponding throughput bar is omitted.
 
 Comparing with vanilla P4C, we obtain 48\%, 55\%, 57\%, and 46\% throughput improvements for L2Fwd, IPv4, IPv6, and NDN applications respectively.
-The L2Fwd-crypto application shows minimum improvements, due to its inherently compute-intensive nature.
+The L2Fwd-crypto application shows minimum improvements, due to its compute-intensive nature.
 %In the applications, they are not exploiting batching \& prefetching and just with these optimizations there is a huge improvement.
 \\
 G-Opt is a previous effort at bridging the gap between CPU and GPU performance for packet processing
@@ -206,8 +209,9 @@ our work differs from G-Opt: (1) our approach is largely automatic and works wit
 program representation. (2) we employ batching and sub-batching instead of multi-threading, which
 makes our approach more efficient as it avoids context-switching overheads.
 We report a 20\%, 15\%, 17\%, and 59\% improvement over G-Opt for L2Fwd, IPv4, IPv6, and NDN applications respectively,
-in head-to-head comparisons. We also find that G-Opt did not systematically explore the space of
-all possible transformations, when compared with our work. Our systematic exploration of $B$ and $b$, allows
+in head-to-head comparisons. We find that G-Opt authors did not systematically explore the space of
+all possible transformations, when compared with our work, perhaps due
+to the lack of a performance model. Our systematic exploration of $B$ and $b$, allows
 us to maximize the throughput, beyond previous work.
 %They are using both batching and prefetching, and their main aim was to make the results comparable to GPU. The difference is due to the batch size, they are not using the optimal batch size and we can see the performance gain by using the optimal batching size in Figure \ref{tablesize}.
 %\\
@@ -248,13 +252,19 @@ IPv6 packet throughput is slightly lower than others, because it uses larger
 %\\
 %\textbf{Conclusion:}We can say two things about the result of this experiment. First, applications are scaling linearly with the number of cores and second, applications are saturating four 10 Gbps ports with four cores.
 
+\subsection{Latency}
+In all our experiments, the end-to-end latency of a packet can be at most $B$ times worse than optimal. Usually, trading-off
+increased latency (in an already fast end-to-end system) for better throughput, is acceptable for most real-world
+applications.
 
 \section{Discussion}
+\label{sec:discussion}
 While we restricted our discussion to batching and sub-batching, compiler
 transformations can be much more sophisticated. For example, the choice
 of data-structure to maintain and lookup the table, is often critical
-to the CPU speed of the application. If the application is CPU-bound, then
-it makes sense to try and optimize the choice of data-structure.
+to the CPU speed of the application.
+%If the application is CPU-bound, then
+%it makes sense to try and optimize the choice of data-structure.
 We believe that existing
 work in the realm of data-representation synthesis in programming languages
 \cite{data_representation_synthesis, concurrent_data_representation_synthesis},
@@ -291,7 +301,7 @@ resources.
 \section{Related Work}
 \label{relatedwork}
 There has been a plethora of related work on CPU-based packet processing
-and related programming models, including Click \cite{click} and RouteBricks \cite{dobrescu2009routebricks}.
+and related programming models, including Click \cite{kohler2000click} and RouteBricks \cite{dobrescu2009routebricks}.
 Manual optimizations to improve the performance of packet processing algorithms \cite{dobrescu2009routebricks, 189006, Kim:2012:PBC:2349896.2349910, Zhou:2013:SHP:2535372.2535379} have also been has been studied extensively.
 In contrast, our work takes a compiler-centric approach to this problem, targetting micro-architectural
 optimizations, by systematically exploring the space of potential configurations. Our results surprisingly
@@ -308,8 +318,10 @@ well as hand-tuned code. Dobrescu et. al. \cite{Dobrescu:2010:CPM:1921151.192115
 of splitting an application into parallel components to achieve high throughput. Previous work on
 data-representation synthesis \cite{data_representation_synthesis, concurrent_data_representation_synthesis}
 involves automatically inferring the optimal data structures and schedule for a high-level program
-specification. Unlike this previous work, our focus on network processing pipelines enables
-more domain-specific optimizations, and deeper micro-architectural modeling for better performance.
+specification. Unlike this previous work, our focus on network processing pipelines on
+general-purpose hardware, enables
+more domain-specific optimizations, and deeper micro-architectural modeling for better
+overall performance.
 
 While our initial efforts are aimed at optimization and performance modeling, we hope
 to extend this work, towards developing an adaptive optimizing compiler for packet-processing pipelines.

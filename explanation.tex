@@ -7,10 +7,10 @@ of packets (one stream per input NIC) converging
 to a processing node that looks up the packets' MAC addresses (source
 and destination)
 to index locally-stored lookup tables, to decide the destination of the packet, and
-finally output streams of packets (one stream per output NIC) emerging out of
+output streams of packets (one stream per output NIC) emerging out of
 the processing node. We use
 this simple application to illustrate the performance implications of
-scheduling and prefetching decisions made by the compiler. We first focus on performance
+scheduling and prefetching decisions made by the compiler. We focus on performance
 optimization for a single CPU core. Multi-queueing support in modern NICs
 ensures that most applications can scale near-linearly with the number of cores.
 \begin{figure}[ht]
@@ -18,30 +18,33 @@ ensures that most applications can scale near-linearly with the number of cores.
 \caption{Packet Processing Pipeline}
 \label{fig:overviewfigure}
 \end{figure}
+
+
 We first discuss the characteristics of the underlying hardware.
 Three components of a general-purpose architecture, are most critical to the performance of the
+packet-processing
 application: NIC subsystem, CPU, and Memory subsystem. Figure~\ref{fig:overviewfigure}
 illustrates the data-flow at the hardware level. The NIC is involved in reading the packets
 off the wire and storing them into main memory. In our experiments, a NIC's input bandwidth
 is upper-bounded by 10Gbps, however, its bandwidth to memory is usually much higher\footnote{The
 total PCIe bandwidth to main memory is around XXX, which gets shared across multiple NICs. For
 all our experiments, except one (XXX), the total PCIe bandwidth remains unsaturated.}. The latency
-from NIC to main memory is usually long (i.e., the NIC-memory interface is a high-bandwidth
+from NIC to main memory is usually long (i.e., the NIC-memory DMA interface is a high-bandwidth
 high-latency interface), and so it is important to allow multiple
 packets in flight from NIC to memory, to ensure effective bandwidth utilization across the
-NIC-memory interface. To realize this parallelism, we need {\em batching}, by ensuring
+NIC-memory DMA interface. To realize this parallelism, we need {\em batching}, by ensuring
 that multiple
 packets are consumed/produced to the NIC's ring buffer in one shot. This allows the NIC to initiate
 multiple PCIe transactions in parallel, thus hiding the round-trip NIC-memory latency. This
 available parallelism at the NIC-memory interface is labeled as (1) %XXX
 in Figure~\ref{fig:overviewfigure}.
 
-The next step in each packet processing pipeline is the actual logic; this logic is usually
-the key differentiator across multiple applications. Some applications are CPU-bound (involve
+The next step in each packet processing pipeline is the actual logic.
+Some applications are CPU-bound (involve
 significant processing time), and others are memory-bound (involve significant cache-misses
 and round trips to main memory). If an application is CPU bound, we cannot do much, and rely
 on the underlying C compiler to tighten the code, and extract the SIMD and ILP parallelism. If
-the application is memory-bound however, our code generator can exploit the
+the application is memory-bound however, our code generator needs to exploit the
 available memory-level parallelism.
 
 The CPU-memory interface is also a high-bandwidth high-latency interface. CPUs allow multiple
@@ -56,16 +59,17 @@ achieve this by {\em statically context-switching} among multiple threads, on ea
 expensive memory access. They relied on the programmer to manually annotate the expensive
 memory accesses (the ones that are likely to result in a cache-miss) by hand.
 
-We show that the memory-level parallelism can be exploited through {\em sub-batching} (a sub-batch
+We show that memory-level parallelism can be exploited through {\em sub-batching} (a sub-batch
 is created within a larger batch that was required to efficiently NIC-memory bandwidth), for this
 CPU-memory interface. Sub-batching involves processing multiple packets (of sub-batch size) at
 each step of the processing logic.
 Sub-batching ensures that multiple independent lookups (if any) can be close-enough, such that
 memory-level parallelism gets exploited.
-Both batching and sub-batching, can also be thought-of as
-the loop-fission transformation in classical compiler literature \cite{loop_fission}, as are
-shown in Figures~\ref{fig:loop_fission_batch}~and~\ref{fig:loop_fission_subbatch}. We use $B$
-to denote the batchsize, and $b$ to denote the sub-batchsize.
+Both batching and sub-batching, are
+loop-fission transformations \cite{loop_fission}, when viewed as a compiler optimization.
+Figures~\ref{fig:loop_fission_batch}~and~\ref{fig:loop_fission_subbatch} show
+the batching and sub-batching transformations respectively. We use $B$
+to denote the batch-size, and $b$ to denote the sub-batch-size.
 
 \begin{figure}[ht]
 \begin{small}
@@ -91,7 +95,7 @@ sub\hspace{0.2cm}{\bf app} \{ &  sub\hspace{0.2cm}{\bf app} \{\\
 %}
 \end{tabular}
 \end{small}
-\caption{\label{fig:loop_fission_batch} Batching, shown as loop-fission compiler tranformation.}
+\caption{\label{fig:loop_fission_batch} Batching.}
 \end{figure}
 
 \begin{figure}[ht]
@@ -108,7 +112,7 @@ sub\hspace{0.2cm}{\bf process\_packet}(p) \{ & sub\hspace{0.2cm}{\bf process\_pa
 &\}\\
 \end{tabular}
 \end{small}
-\caption{\label{fig:loop_fission_subbatch} Sub-batching, within {\tt process\_packet} shown as loop-fission compiler tranformation.}
+\caption{\label{fig:loop_fission_subbatch} Sub-batching, within {\tt process\_packet}.}
 \end{figure}
 
 
@@ -143,9 +147,12 @@ sub\hspace{0.2cm}{\bf process\_packet}(p) \{ & sub\hspace{0.2cm}{\bf process\_pa
 %\label{prefetching}
 %Software prefetching is an old concept and has been used extensively to improve the performance for memory-bound applications. In Figure \ref{overviewfigure}, we are showing memory subsystem as one component, however, CPU can issue multiple memory accesses and memory subsystem can fetch \#MSHRs requests in parallel. Prefetch allows the application to use memory and CPU in parallel e.g. CPU can do its work while the memory system is bringing data into L1 cache. If we know that some data will be used later in the program, it can be prefetched by the prefetch instruction. In Algorithm \ref{lookup-algo} we are showing how prefetch can be used for lookup based network application. In line \ref{hash-lookup-line} we need bucket where the key is present. If we remove prefetch instruction in Line \ref{prefetch-line} CPU will stall at Line \ref{hash-lookup-line} if the bucket is not present in L1 cache. To avoid the stall we can prefetch the bucket in the first loop. This will reduce the total stall time and the performance of the application will increase.
 
-Sub-batching is best performed through the {\em prefetch} instruction available
-on the x86 architecture. The prefetch instruction tells the hardware that this memory request is less
-critical than the other memory requests, allowing better scheduling at the hardware level. Algorithm~\ref{algo:prefetch}
+Sub-batching hides the CPU-memory latency. We further improve it by using the 
+x86 {\em prefetch} instruction for future packets.
+The prefetch instruction allows the hardware to differentiate a memory
+request that is likely to be used in future, from a memory request that is likely
+to be used immediately (fetch), and allows better scheduling of resources by hardware.
+Algorithm~\ref{algo:prefetch}
 shows the example prefetching code used for the hash-lookup in the L2 forwarding example.
 
 \begin{algorithm}[H]
@@ -162,13 +169,17 @@ shows the example prefetching code used for the hash-lookup in the L2 forwarding
  \EndFor
  \end{algorithmic}
 \end{algorithm}
-Notice that sub-batching is dependent upon batching, in that, the sub-batchsize can only be smaller than the batchsize. Thus, if there is no
-batching, there can be no sub-batching. We experimentally show that the optimal sub-batchsize for a given batchsize, is often less than the
-batchsize.
+Notice that sub-batching is dependent upon batching, in that, the sub-batch-size can only be smaller than the batch-size. Thus, if there is no
+batching, there can be no sub-batching. We find that the optimal sub-batch-size is often less than the
+optimal batch-size.
 
 Finally, the processed packets are transmitted to the output NICs. Assuming uniform distribution of output packets
-across output NICs, we expect the output NICs to automatically operate at batch granularity. Hence, the output bandwidth
-utilization at the memory-NIC interface is similar to the utilization of the input NIC-memory utilization.
+across output NICs, we expect
+the utilization at the output memory-NIC DMA interface to be similar to the utilization of the input NIC-memory DMA
+interface.
+
+We evaluate the effectiveness of the batching and sub-batching transformations, and systematically explore
+the solution space to search for the optimal values of $B$ (batch-size) and $b$ (sub-batch-size), in our experiments.
 
 %\textbf{Prefetch Distance and Batch Size:}
 %\label{subbatching}
