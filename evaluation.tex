@@ -23,7 +23,7 @@ applications are tested with minimum-sized packets (64 bytes), to test the limit
 \\
 \textbf{Applications}: Our applications are similar to the ones used in \cite{189006}, to allow head-to-head comparison of performance results:
 \begin{enumerate}
-\item \textbf{Layer 2 Switch}: Two hash tables are used to store the mapping between SMAC/DMAC and the forwarding port. Each packet goes thorugh two lookup stages, one for SMAC and another for DMAC. By default, we assume 16 million entries in both tables (as also used in \cite{189006}), unless otherwise specified.
+\item \textbf{Layer 2 Switch}: Two hash tables are used to store the mapping between SMAC/DMAC and the forwarding port. Each packet goes through two lookup stages, one for SMAC and another for DMAC. By default, we assume 16 million entries in both tables (as also used in \cite{189006}), unless otherwise specified.
 %We are using Intel DPDK's implementation for various hash table operations.
 \item \textbf{IPV4 Forwarding}: A longest-prefix match (LPM) lookup is performed on the destination IP address to get the forwarding port.
 %We are using Intel DPDK's implementation for LPM related operations for IPv4 Forwarding and IPv6 Forwarding application.
@@ -60,12 +60,12 @@ For a compute-intensive application like L2Fwd-Crypto, the performance improveme
 %\textbf{Conclusion:} As we can see that batching can be used for almost all the applications without thinking much. However,. Section \ref{optimalbatchsize} can be used to find the optimal batch size. Prefetch on the other hand surely improves the performance but can't be used in every application and should be used with precaution as it might pollute the cache which might result in performance loss.
 
 \subsection{Sensitivity of Throughput to $B$}
-We use the L2 forwarding application to demonstrate the effects of changing application behaviour on the optimal
+We use the L2 forwarding application to demonstrate the effects of changing application behavior on the optimal
 values for $B$ and $b$. We use the L2Fwd application with five different sizes of the lookup table. The size of
 the lookup table approximately represents the working set of the application. If the table fits in the caches,
 then the application is largely compute bound and has few accesses to the main memory. On the other hand, if the
 table is much larger than the last-level cache, then almost every random table access will result in an access to
-the main memory. Consequently, the changing application behaviour results in change in the value of the
+the main memory. Consequently, the changing application behavior results in a change in the value of the
 optimal $B$ and $b$, required for optimal throughput.
 
 Figure~\ref{fig:tablesize} plots the results for throughput for different table sizes and batch-sizes $B$. The solid
@@ -133,7 +133,7 @@ performance model, discussed next.
 %\subsection{Sub-batching}
 \subsection{Performance model}
 We discuss a performance model to explain our experimental results. At a high-level,
-the system can be modeled as a queuing network, with three parallel relevant
+the system can be modeled as a queueing network, with three parallel relevant
 server components: namely,
 the CPU, the CPU-memory interface, and the I/O-memory DMA interface. Assuming that
 the three components
@@ -195,7 +195,7 @@ related work, G-Opt, aimed at extracting memory-level parallelism through manual
 and comparable
 hand-optimized code available as a part of the DPDK distribution.
 To ensure fair comparisons, we verify that the number of lookups and number of entries in the table(s) is same in all experiments.
-In cases where a hand-optimized version or GOpt results are not available,
+In cases where a hand-optimized version or G-Opt results are not available,
 the corresponding throughput bar is omitted.
 
 Comparing with vanilla P4C, we obtain 48\%, 55\%, 57\%, and 46\% throughput improvements for L2Fwd, IPv4, IPv6, and NDN applications respectively.
@@ -275,8 +275,8 @@ prefix match, to reduce the number of average memory accesses per packet.
 We implemented longest-prefix match lookup based on a compressed trie, and
 experimented with our IPv6 application, albeit with
 20,000 IPv6 prefixes, all having length 48.
-We save around 1.25 memory accesses per packet for this application, resulting in 38\%
-higher throughput . In general, the required transformations are highly dependent
+We save around 1.25 memory accesses per packet for this application, resulting in 16\%
+higher throughput. In general, the required transformations are highly dependent
 on the application (e.g., L2 forwarding vs. IPv6 lookup), and the data (e.g.,
 table size), and these characteristics could change over time.
 We think that this argues for an automatic adaptive optimization engine, like the one
@@ -302,11 +302,11 @@ resources.
 \label{relatedwork}
 There has been a plethora of related work on CPU-based packet processing
 and related programming models, including Click \cite{kohler2000click} and RouteBricks \cite{dobrescu2009routebricks}.
-Manual optimizations to improve the performance of packet processing algorithms \cite{dobrescu2009routebricks, 189006, Kim:2012:PBC:2349896.2349910, Zhou:2013:SHP:2535372.2535379} have also been has been studied extensively.
-In contrast, our work takes a compiler-centric approach to this problem, targetting micro-architectural
+Manual optimizations to improve the performance of packet processing algorithms \cite{dobrescu2009routebricks, 189006, Kim:2012:PBC:2349896.2349910, Zhou:2013:SHP:2535372.2535379} have also been studied extensively.
+In contrast, our work takes a compiler-centric approach to this problem, targeting micro-architectural
 optimizations, by systematically exploring the space of potential configurations. Our results surprisingly
 show performance improvements over these previous papers. While our approach is aimed at automatic code generation from a high-level
-specification, most previous work involved manual optimizations for individual applications. We have already compared our work
+specification, most previous works involved manual optimizations for individual applications. We have already compared our work
 with some of the most relevant previous work through our experiments.
 
 %by authors, however, these papers are determining the batch size by empirical analysis. \cite{189006, Zhou:2013:SHP:2535372.2535379} are exploiting the fact that CPU and Memory subsystem can work in parallel and memory stall can be minimized by issuing the software prefetches before actually using the data. However, it is difficult to use these manual optimizations each time we are writing a packet processing application.
