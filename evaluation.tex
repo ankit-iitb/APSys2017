@@ -233,7 +233,7 @@ better than hand-optimized code written by developers.
 \label{cores}
 \end{figure}
 Figure \ref{cores} plots the application throughput with increasing number of cores.
-Unsurprisingly, the throughput usually scales linearly with the number of cores, except when
+Expectedly, the throughput usually scales linearly with the number of cores, except when
 they saturate the PCIe bandwidth. In our experimental setup, the theoretical max achievable
 throughput for 64 byte packets, summed across 4 NICs, is 59 Mpps (million packets per second). However, our
 experimental results show that it cannot sustain this theoretical limit, and instead
