@@ -1,24 +1,37 @@
 \section{Evaluation}
 \label{evaluation}
-Evaluation section is divided into four types of experiments: First, we are showing the effect of batching and batching plus prefetching for each application. Second, we are comparing our applications with the same application with hand-tuned optimizations published in different papers. By doing this we are showing that automatic optimizations can work as good as hand-tuned optimizations. Third, we are running the applications with different number of cores to show that the applications are scaling linearly with the number of cores. Fourth, we are comparing the throughput by changing the batch size and table size for L2FWD application to show the relation among batch size, table size, and throughput. With this experiment, we are also making sure that our model is working the same way we are expecting.
+We perform experiments to answer two main questions: (a) How much performance improvement is possible through carefully tuning the batchsize $B$ and
+the sub-batchsize $b$?  We find significant performance improvements. (b) Can we develop a performance model from the experimental data, to generalize our results for automatic
+optimization by a compiler
+optimizer, for an arbitrary packet processing pipeline. We develop a preliminary model to explain our current results. We integrate our model into P4C
+to automatically optimize the applications used in this paper.
+
+%Evaluation section is divided into four types of experiments: First, we are showing the effect of batching and batching plus prefetching for each application. Second, we are comparing our applications with the same application with hand-tuned optimizations published in different papers. By doing this we are showing that automatic optimizations can work as good as hand-tuned optimizations. Third, we are running the applications with different number of cores to show that the applications are scaling linearly with the number of cores. Fourth, we are comparing the throughput by changing the batch size and table size for L2FWD application to show the relation among batch size, table size, and throughput. With this experiment, we are also making sure that our model is working the same way we are expecting.
 
 \subsection{Evaluation Setup}
-\textbf{Server Specifications:} We are using Dell Poweredge R430 Rack Server, based on Haswell architecture. This server has two sockets occupied with Intel Xeon E5-2640 
+\textbf{Hardware}: Dell Poweredge R430 Rack Server, based on Haswell architecture. This server has two sockets occupied with Intel Xeon E5-2640 
 v3\cite{xeon} processor. Each processor has 8 physical and each core is capable of running at 2.60 GHz. Cores on a socket share 20 MB cache. Sockets are connected with 2 QPIs(Quick Path Interconnect), each capable of 8 GT/s. Two dual port NICs,1 Intel x520 and 1 Intel x540, are connected to Socket 0 through PCIe 2.0 and each port can work at 10Gbps. Total main memory available is 64 GB, spread across two sockets in a NUMA fashion.
 \\
-\textbf{Software:} Our servers are running Ubuntu 14.04 LTS operating system with 4.4.0-59 Linux kernel version. We are using DPDK version 16.07 with IXGBE poll mode driver to
+\textbf{Software}: Ubuntu 14.04 LTS operating system with 4.4.0-59 Linux kernel version. We are using DPDK version 16.07 with IXGBE poll mode driver to
 interact with the underlying NICs. 
 \\
-\textbf{Traffic Generator:} We are using same hardware and software on both the servers and Pktgen-DPDK\cite{pktgen} version 3.1.0 to generate different kind of packets for different applications used in the experiments. Pktgen-DPDK\cite{pktgen} can generate the 64 bytes packet size traffic at line rate i.e 14.8 Mpps for 10 Gbps port. We are able to generate traffic at 59 Mpps for four ports with 64 bytes packet size. We have extended Pktgen-DPDK\cite{pktgen} to put random source and destination address depending on the application.
+\textbf{Traffic Generator}: We are using same hardware and software on both the servers and Pktgen-DPDK\cite{pktgen} version 3.1.0 to generate different kind of packets for different applications used in the experiments. Pktgen-DPDK\cite{pktgen} can generate the 64 bytes packet size traffic at line rate i.e 14.8 Mpps for 10 Gbps port. We are able to generate traffic at 59 Mpps for four ports with 64 bytes packet size. We have extended Pktgen-DPDK\cite{pktgen} to put random source and destination address depending on the application.
 \\
-\textbf{Applications:} In this part we are specifying the applications we are using for different experiments. We have written applications in P4\cite{Bosshart:2014:PPP:2656877.2656890} and extended P4C\cite{Laki:2016:HSP:2934872.2959080} compiler to generate code with the above mentioned optimizations. P4C\cite{Laki:2016:HSP:2934872.2959080} is generating DPDK\cite{DPDK} based applications which are later compiled with gcc to get the target binary. We are using similar applications as used in \cite{189006} for comparing our results with their CPU based implementation.
-
+\textbf{Methodology}: We use packet-processing pipelines developed in P4\cite{Bosshart:2014:PPP:2656877.2656890} as our test applications. We have extended the P4C\cite{Laki:2016:HSP:2934872.2959080} compiler to generate code with batching, sub-batching and prefetching. P4C\cite{Laki:2016:HSP:2934872.2959080} generates C-code that can be run with the DPDK\cite{DPDK} framework, which is then compiled into an executable using GCC. Unless otherwise specified, all
+applications are tested with minimum-sized packets (64 bytes), to test the limits of the system.
+\\
+\textbf{Applications}: Our applications are similar to the ones used in \cite{189006}, to allow head-to-head comparison of performance results:
 \begin{enumerate}
-\item \textbf{Layer 2 Switch:} In this application we are using two hash tables to store the mapping between SMAC/DMAC and value. Each packet is going through two lookup stages, one for SMAC and one for DMAC. We are putting 16 Million entries in the table for the experiments unless otherwise specified for some experiment. We are using Intel DPDK's implementation for various hash table operations.
-\item \textbf{IPV4 Forwarding:} In this application we are performing LPM lookup on destination IP address to get the forwarding port. We are using Intel DPDK's implementation for LPM related operations for IPv4 Forwarding and IPv6 Forwarding application. We are populating the forwarding table with 527,961 prefixed used by \cite{189006}.
-\item \textbf{IPv6 Forwarding:} We are performing one lookup on destination address to find the egress port. We are populating the DPDK LPM table with random 200,000 entries with the length between 48 to 64, as done in \cite{189006}. From the Pktgen we are generating the packets with destination address randomly picked from these 200,000 entries. Minimum packet size for this application is 78 bytes and not 64 bytes.
-\item \textbf{Named Data networking:} We are using hashtable for lookups implemented by DPDK. We are using algorithm and URL dataset from \cite{DBLP:conf/globecom/ZhangWYLL13}. From Pktgen we are generating packets by randomly putting the URLs from used dataset. We are using 32 bytes URLs in the packet headers as done in \cite{189006}.
-\item \textbf{l2fwd-crypto Application:} All other applications are lookup based and we want to see the effect of batching \& prefetching on other kinds of applications too. So, we have included this application in the experiments. We are using L2Fwd-Crypto\cite{l2crypto} from DPDK examples given in DPDK repository. The application performs encryption and decryption based on the input parameters and then it forwards the packet on Layer 2 with static port mapping. 
+\item \textbf{Layer 2 Switch}: Two hash tables are used to store the mapping between SMAC/DMAC and the forwarding port. Each packet goes thorugh two lookup stages, one for SMAC and another for DMAC. By default, we assume 16 million entries in both tables (as also used in \cite{189006}), unless otherwise specified.
+%We are using Intel DPDK's implementation for various hash table operations.
+\item \textbf{IPV4 Forwarding}: A longest-prefix match (LPM) lookup is performed on the destination IP address to get the forwarding port.
+%We are using Intel DPDK's implementation for LPM related operations for IPv4 Forwarding and IPv6 Forwarding application.
+We populate the forwarding table with 527,961 prefixed, as also used by \cite{189006}.
+\item \textbf{IPv6 Forwarding}: A longest-prefix match lookup is performed on the destination address to find the egress port. We populate the DPDK LPM table with 200,000 random entries with the length between 48 to 64, as also done in \cite{189006}. Through Pktgen, we generate packets with destination address randomly picked from these 200,000 entries. The minimum packet size for this application is 78 bytes and not 64 bytes.
+\item \textbf{Named Data networking}: A hashtable lookup is used to map a string URL to a forwarding port.
+%implemented by DPDK.
+We use the URL dataset given in \cite{DBLP:conf/globecom/ZhangWYLL13}. Using Pktgen, we transmit packets containing URLs generated randomly from our dataset. We use 32 bytes URLs in our packet headers, as also done in \cite{189006}.
+\item \textbf{l2fwd-crypto Application}: We use the L2Fwd-Crypto\cite{l2crypto} example from DPDK, as is available in the DPDK source code. The application performs encryption and decryption based on the input parameters and it then forwards the packet on Layer 2 with static port mapping. Unlike other applications, which are largely memory-bound, this application is compute-bound.
 \end{enumerate}
 
 \subsection{Effect of batching and prefetching}
@@ -92,6 +105,14 @@ Second, for each batch size, the relative throughput of the application will be 
 \textbf{Conclusion:} 
 In case of batching only, the performance is decreasing with an increase in table size because of the increase in the stall time. We are using prefetching to minimize the stall time and in case of batching plus prefetching the throughput is not declining much due to increase in the table size. We can say that batching and prefetching is playing well together and due to this the throughput is stable even if we are increasing the table size.
 
+\subsection{Sub-batching}
+\begin{figure}[ht]
+\includegraphics[width = \linewidth]{Figures/Subbatching.png}
+\caption{Effect of subbatching}
+\label{subbatchfigure}
+\end{figure}
+
+In this experiment we are using IO and Compute batch size 128 and changing the subbatch size to confirm the effect of subbatching. As we can see in the Figure\ref{subbatchfigure} we are able to get improved performance in case of subbatches used in L2Fwd application.
 \subsection{TRIE Compression}
 In this experiment we enabled the DIR24-8\cite{Gupta98routinglookups} based DPDK LPM6 library to use TRIE compression. The number of steps involved in DIR24-8 based LPM6 matching algorithm is proportional to IPv6 prefix length and in each step, algorithm accesses a new TRIE node which is an expensive memory operation. In real world scenario, IPv6 prefixes can be stored in compressed form in TRIEs either because they are unique or because they have common prefixes. In compression algorithm, we have merged a child node with its parent if it is the only child of its parent.
 \\
