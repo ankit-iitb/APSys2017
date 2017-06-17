@@ -39,7 +39,7 @@ We use the URL dataset given in \cite{DBLP:conf/globecom/ZhangWYLL13}. Using Pkt
 \begin{figure}[ht]
 \includegraphics[width = \linewidth]{Figures/effectofbatching.png}
 \caption{Effect of batching and prefetching}
-\label{batchingandprefetchingfigure}
+\label{fig:batchingandprefetchingfigure}
 \end{figure}
 We added batching and sub-batching support to P4C, and show results for batch-size $B=32$
 in Figure~\ref{fig:batchingandprefetchingfigure}. The {\tt Batching} results represent the case when sub-batching
@@ -55,6 +55,7 @@ For a compute-intensive application like L2Fwd-Crypto, the performance improveme
 %In P4C\cite{Laki:2016:HSP:2934872.2959080}, authors are not using batching and prefetching for the applications. We are adding batching and prefetching for all the applications and in Figure \ref{batchingandprefetchingfigure} we are showing the effect of these optimizations for different applications. We are using 32 as batch size for all the applications in all the experiments unless specified otherwise. L2Fwd and NDN are using hash lookup and DPDK code is written in such a way that we are able to prefetch the bucket where the key is present. On the other hand, we don't have much opportunity to use prefetches for LPM lookup based applications. For L2Fwd, batching improves the performance by 20\% and prefetching, used with batching, again improves the performance by 23\%. Similarly for NDN, batching alone improves the performance by 20\% and after adding prefetching there is an additional performance gain of 21 \%. After applying batching and prefetching to IPv4 and IPv6 there is a performance gain of 55\% \& 57\% respectively.
 %\\
 %\\
+
 %\textbf{Conclusion:} As we can see that batching can be used for almost all the applications without thinking much. However,. Section \ref{optimalbatchsize} can be used to find the optimal batch size. Prefetch on the other hand surely improves the performance but can't be used in every application and should be used with precaution as it might pollute the cache which might result in performance loss.
 
 \subsection{Sensitivity of Throughput to $B$}
