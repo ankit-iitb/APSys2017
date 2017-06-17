@@ -162,7 +162,7 @@ shows the example prefetching code used for the hash-lookup in the L2 forwarding
  \caption{HASH LOOKUP}
  \label{algo:prefetch}
  \begin{algorithmic}[1]
- \For{$i \leftarrow 1$ To $Batch Size$}
+ \For{$i \leftarrow 1$ To $Sub Batch Size$}
      \State key-hash[i] = extract key and compute hash;\Comment{$C_K$} \label{hash-compute-line}
      \State prefetch(bucket-for-key-hash(key-hash[i]));\Comment{$C_P$} \label{prefetch-line}
  \EndFor
