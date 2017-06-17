@@ -27,9 +27,9 @@ high-latency interface), and so it is important to allow multiple
 packets in flight from NIC to memory, to ensure effective bandwidth utilization across the
 NIC-memory interface. To realize this parallelism, we need {\em batching}, by ensuring
 that multiple
-packets are consumed/produced to the NIC's ring buffer in one shot. This allow the NIC to initiate
+packets are consumed/produced to the NIC's ring buffer in one shot. This allows the NIC to initiate
 multiple PCIe transactions in parallel, thus hiding the round-trip NIC-memory latency. This
-available parallelism at the NIC-memory interface, is labeled as (1) %XXX
+available parallelism at the NIC-memory interface is labeled as (1) %XXX
 in Figure~\ref{fig:overviewfigure}.
 
 The next step in each packet processing pipeline is the actual logic; this logic is usually
@@ -43,11 +43,11 @@ available memory-level parallelism.
 The CPU-memory interface is also a high-bandwidth high-latency interface. CPUs allow multiple
 memory requests to be in flight, by using MSHRs (miss-status handling registers) to store the
 state of in-flight memory requests. Previous work on comparing CPU and GPU performance for
-packet-processing pipelines \cite{kalia} highlighted the importance of exploiting
+packet-processing pipelines \cite{189006} highlighted the importance of exploiting
 memory-level parallelism in these workloads.
 An out-of-order superscalar CPU executes a {\em window} of instructions in parallel.
 Thus, a CPU can issue multiple main-memory requests in parallel, only if the consecutive memory
-requests happen to be within a single instruction window. Kalia et. al. \cite{kalia}
+requests happen to be within a single instruction window. Kalia et. al. \cite{189006}
 achieve this by {\em statically context-switching} among multiple threads, on each
 expensive memory access. They relied on the programmer to manually annotate the expensive
 memory accesses (the ones that are likely to result in a cache-miss) by hand.
@@ -139,7 +139,7 @@ sub\hspace{0.2cm}{\bf process\_packet}(p) \{ & sub\hspace{0.2cm}{\bf process\_pa
 %Software prefetching is an old concept and has been used extensively to improve the performance for memory-bound applications. In Figure \ref{overviewfigure}, we are showing memory subsystem as one component, however, CPU can issue multiple memory accesses and memory subsystem can fetch \#MSHRs requests in parallel. Prefetch allows the application to use memory and CPU in parallel e.g. CPU can do its work while the memory system is bringing data into L1 cache. If we know that some data will be used later in the program, it can be prefetched by the prefetch instruction. In Algorithm \ref{lookup-algo} we are showing how prefetch can be used for lookup based network application. In line \ref{hash-lookup-line} we need bucket where the key is present. If we remove prefetch instruction in Line \ref{prefetch-line} CPU will stall at Line \ref{hash-lookup-line} if the bucket is not present in L1 cache. To avoid the stall we can prefetch the bucket in the first loop. This will reduce the total stall time and the performance of the application will increase.
 
 Sub-batching is best performed through the {\em prefetch} instruction available
-on the x86 architecture. The prefetch intruction tells the hardware that this memory request is less
+on the x86 architecture. The prefetch instruction tells the hardware that this memory request is less
 critical than the other memory requests, allowing better scheduling at the hardware level. Algorithm~\ref{algo:prefetch}
 shows the example prefetching code used for the hash-lookup in the L2 forwarding example.
 

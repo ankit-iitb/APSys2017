@@ -2,11 +2,11 @@
 % The rapid advancements in networking have necessitated the development of many newer protocols and packet processing functionalities. The difficulty in programming and extension of traditional hardware routers has made software routers --packet processing software running on general purpose hardware- more popular. In effect, software routers have realized the modification of network functionality with a software upgrade, avoiding the burden of hardware developers in designing and developing newer hardware.
 
 Software defined networking is already mainstream. Newer protocols and innovative packet
-processing functionalities, imply that
+processing functionalities imply that
 newer packet processing pipelines are getting developed over time. Manually
 optimizing such packet processing pipelines requires highly-skilled programmers, is tedious
-and time-consuming, and can be repititive.
-For example, the RouteBricks paper \cite{routebricks} discusses several insightful optimizations
+and time-consuming, and can be repetitive.
+For example, the RouteBricks paper \cite{dobrescu2009routebricks} discusses several insightful optimizations
 for a simple packet-forwarding application on a modern multi-core machine; doing such careful
 research for each separate (and potentially much more complex) packet processing pipeline
 seems impractical. Further, these optimizations need to be re-tuned for every different
@@ -18,12 +18,12 @@ Domain specific languages like P4\cite{Bosshart:2014:PPP:2656877.2656890} and Cl
 to bridge this gap, by allowing manual specification of functionality using high-level constructs. In this way, several
 low-level details are abstracted away from the programmer. However, the onus of efficiently mapping this high-level
 specification to the underlying machine architecture, shifts to the compiler. The difference between an unoptimized
-and optimized implementation for the same high-level specification, can be significant.
+and optimized implementation for the same high-level specification can be significant.
 For example, Kim et. al. \cite{Kim:2012:PBC:2349896.2349910} optimize the specification of an
 an IPv4 forwarding engine, specified using the Click programming model, to achieve 28 Gbps of IPv4 throughput for minimum-sized
 packets
 on a machine with two quad-core Intel Xeon X5550 CPUs, i.e., they achieve roughly 3.5 Gbps per CPU core for this workload.
-Similarly, P4C \cite{p4c}, a prototype compiler for P4,
+Similarly, P4C \cite{Laki:2016:HSP:2934872.2959080}, a prototype compiler for P4,
 is able to achieve 5.17 Gbps IPv4 throughput per CPU core for an identical workload configuration, on an Intel Xeon E5-2630
 CPU. In contrast, a hand optimized implementation for this workload can achieve over 10Gbps per core on an
 identical machine. An ideal compiler should be able to
@@ -37,7 +37,7 @@ cache-miss stalls. Finally, we rely on existing C compilers (e.g., gcc) to autom
 the generated code to efficiently utilize the CPU processor (e.g., by maximizing SIMD
 and instruction-level parallelism ILP). We experiment with several code configurations involving varying
 degrees of available parallelism to DMA channels, and to CPU-memory channels. We show
-improvements over previously-published performance results for similar programs, and develop a model
+improvements over previously published performance results for similar programs, and develop a model
 for reasoning about performance in this setting. We have integrated our model into the
 P4C compiler, to enable it to
 automatically optimize the example programs discussed in this paper.
