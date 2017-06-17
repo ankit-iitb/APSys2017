@@ -114,11 +114,11 @@ sub\hspace{0.2cm}{\bf process\_packet}(p) \{ & sub\hspace{0.2cm}{\bf process\_pa
 %\subsection{Packet Processing Pipeline}
 %\label{overview}
 %There are mainly three stages in the network packet processing flow: Receive, Process, Transmit.
-%\begin{figure}[ht]
-%\includegraphics[width = \linewidth]{Figures/queuing.png}
-%\caption{Packet Processing Pipeline}
-%\label{overviewfigure}
-%\end{figure}
+\begin{figure}[ht]
+\includegraphics[width = \linewidth]{Figures/queuing.png}
+\caption{Packet Processing Pipeline}
+\label{overviewfigure}
+\end{figure}
 %\\
 %\textbf{Receive:} After receiving data from the physical layer, NIC puts the data in the buffer and then DMA engine transfers it in main memory through PCIe. Driver maintains the queue for received packets and passes the ownership to the application by reflecting it in the descriptors. When the application makes a function call to receive packets, poll mode driver(PMD) passes the packets to the userspace application. DPDK has library functions to RX and TX packets in batches. Descriptors are shared by NIC and PMD as a Single  Producer Single Consumer Queue and they both polls other ends of it independently.
 %\\
