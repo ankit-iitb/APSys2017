@@ -43,14 +43,14 @@ We use the URL dataset given in \cite{DBLP:conf/globecom/ZhangWYLL13}. Using Pkt
 \label{fig:batchingandprefetchingfigure}
 \end{figure}
 We added batching and sub-batching support to P4C, and show results for batch-size $B=32$
-in Figure~\ref{fig:batchingandprefetchingfigure}. The {\tt Batching} results represent the case when sub-batching
-is disabled (i.e., sub-batch-size $b=1$), while the {\tt Batching and Prefetching} results represent the case
+in Figure~\ref{fig:batchingandprefetchingfigure}. The ``{\tt Batching}'' results represent the case when sub-batching
+is disabled (i.e., sub-batch-size $b=1$), while the ``{\tt Batching\&Prefetching}'' results represent the case
 when sub-batching (and prefetching) is enabled and set to its maximum possible value, i.e., sub-batch-size $b=32$.
 We later discuss the sensitivity of
 throughput to changing $B$ and $b$.
 For L2 forwarding, batching improves the performance by 20\% and sub-batching further improves the performance by an additional 23\%. Similarly
 for NDN, batching alone improves the performance by 20\% and sub-batching results in an additional performance gain of 21\%.
-Using $B=32$ and $b=32$ for IPv4 and IPv6, we obtain a performance gain of 55\% \& 57\% respectively.
+Using $B=32$ and $b=32$ for IPv4 and IPv6, we obtain a performance gain of 55\% and 57\% respectively.
 For a compute-intensive application like L2Fwd-Crypto, the performance improvements are much smaller.
 
 %In P4C\cite{Laki:2016:HSP:2934872.2959080}, authors are not using batching and prefetching for the applications. We are adding batching and prefetching for all the applications and in Figure \ref{batchingandprefetchingfigure} we are showing the effect of these optimizations for different applications. We are using 32 as batch size for all the applications in all the experiments unless specified otherwise. L2Fwd and NDN are using hash lookup and DPDK code is written in such a way that we are able to prefetch the bucket where the key is present. On the other hand, we don't have much opportunity to use prefetches for LPM lookup based applications. For L2Fwd, batching improves the performance by 20\% and prefetching, used with batching, again improves the performance by 23\%. Similarly for NDN, batching alone improves the performance by 20\% and after adding prefetching there is an additional performance gain of 21 \%. After applying batching and prefetching to IPv4 and IPv6 there is a performance gain of 55\% \& 57\% respectively.
