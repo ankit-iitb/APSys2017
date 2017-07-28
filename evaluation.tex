@@ -7,8 +7,6 @@ optimizer, for an arbitrary packet processing pipeline. We develop a preliminary
 integrated our model into P4C
 to automatically optimize the applications used in this paper.
 
-%Evaluation section is divided into four types of experiments: First, we are showing the effect of batching and batching plus prefetching for each application. Second, we are comparing our applications with the same application with hand-tuned optimizations published in different papers. By doing this we are showing that automatic optimizations can work as good as hand-tuned optimizations. Third, we are running the applications with different number of cores to show that the applications are scaling linearly with the number of cores. Fourth, we are comparing the throughput by changing the batch size and table size for L2FWD application to show the relation among batch size, table size, and throughput. With this experiment, we are also making sure that our model is working the same way we are expecting.
-
 \subsection{Evaluation Setup}
 \textbf{Hardware}: Dell Poweredge R430 Rack Server, based on Haswell architecture. This server has two sockets occupied with Intel Xeon E5-2640 
 v3\cite{xeon} processor. Each processor has 8 physical and each core is capable of running at 2.60 GHz. Cores on a socket share 20 MB cache. Sockets are connected with 2 QPIs(Quick Path Interconnect), each capable of 8 GT/s. Two dual port NICs,1 Intel x520 and 1 Intel x540, are connected to Socket 0 through PCIe 2.0 and each port can work at 10Gbps. Total main memory available is 64 GB, spread across two sockets in a NUMA fashion.
@@ -53,12 +51,6 @@ for NDN, batching alone improves the performance by 20\% and sub-batching result
 Using $B=32$ and $b=32$ for IPv4 and IPv6, we obtain a performance gain of 55\% and 57\% respectively.
 For a compute-intensive application like L2Fwd-Crypto, the performance improvements are much smaller.
 
-%In P4C\cite{Laki:2016:HSP:2934872.2959080}, authors are not using batching and prefetching for the applications. We are adding batching and prefetching for all the applications and in Figure \ref{batchingandprefetchingfigure} we are showing the effect of these optimizations for different applications. We are using 32 as batch size for all the applications in all the experiments unless specified otherwise. L2Fwd and NDN are using hash lookup and DPDK code is written in such a way that we are able to prefetch the bucket where the key is present. On the other hand, we don't have much opportunity to use prefetches for LPM lookup based applications. For L2Fwd, batching improves the performance by 20\% and prefetching, used with batching, again improves the performance by 23\%. Similarly for NDN, batching alone improves the performance by 20\% and after adding prefetching there is an additional performance gain of 21 \%. After applying batching and prefetching to IPv4 and IPv6 there is a performance gain of 55\% \& 57\% respectively.
-%\\
-%\\
-
-%\textbf{Conclusion:} As we can see that batching can be used for almost all the applications without thinking much. However,. Section \ref{optimalbatchsize} can be used to find the optimal batch size. Prefetch on the other hand surely improves the performance but can't be used in every application and should be used with precaution as it might pollute the cache which might result in performance loss.
-
 \subsection{Sensitivity of Throughput to $B$}
 We use the L2 forwarding application to demonstrate the effects of changing application behavior on the optimal
 values for $B$ and $b$. We use the L2Fwd application with five different sizes of the lookup table. The size of
@@ -75,7 +67,7 @@ the case when the sub-batch-size $b=1$, i.e., no sub-batching.
 There are a few conclusions to draw from this plot: (1) Expectedly, throughput is generally higher
 for smaller tables than for larger tables. (2) For all table sizes, the throughput usually increases with
 increasing $B$ for $B<128$, due to better exploitation of DMA bandwidth. (3) A batch-size beyond 128, usually results in
-decreased throughput due to greater stress on the caching subssystem. (4) Sub-batching improves the throughput
+decreased throughput due to greater stress on the caching subsystem. (4) Sub-batching improves the throughput
 for larger table-sizes, but does not improve throughput for smaller table sizes. This is expected
 because sub-batching benefits from memory-level parallelism. For small table-sizes, the main-memory
 accesses are few, and so the benefit of sub-batching is little. We discuss this in more detail
@@ -95,7 +87,6 @@ L2 forwarding application.
 \end{figure}
 
 \subsection{Sensitivity of Throughput to $b$}
-
 To further understand the sensitivity of application throughput to the sub-batch-size $b$, we vary
 $b$ for a fixed value of $B=128$, for the L2Fwd application. Figure~\ref{fig:subbatchfigure} plots
 the results, again for different table-sizes. It is interesting to see
@@ -112,25 +103,6 @@ applications, it is not effective (or sometimes even harmful) for
 compute-bound applications. We try and capture this formally in our
 performance model, discussed next.
 
-%In Figure \ref{tablesize}, we are showing the relation between throughput and batch size for different number of entries in the lookup table. We are using L2-FWD application with one lookup for this experiment. In the graph, solid lines are representing the results for batching plus prefetching case and dotted lines are representing batching only results. In Section \ref{batchingsubsection} we will talk about the effect of batching on the application with varying number of entries in the table and in Section \ref{prefetchingsubsection} we will take both batching and prefetching into consideration.
-%In this experiment we are using IO and Compute batch size 128 and changing the subbatch size to confirm the effect of subbatching. As we can see in the Figure\ref{subbatchfigure} we are able to get improved performance in case of subbatches used in L2Fwd application.
-%\subsubsection{Effect of Batching}
-%\label{batchingsubsection}
-%The throughput is decreasing with increase in the number of entries for the same batch size. This kind of behavior is expected and can be explained with the help of Eq. \ref{compute_througput}. Eq. \ref{compute_througput} and Eq. \ref{cycles_compute} tell that with the help of batching we can amortize per packet cost and the throughput of the application is improved. There is an improvement in the throughput until we are increasing the batch size from 1 to optimal batch size and after that, there is a decline in the throughput.
-%\\
-%\textbf{Batch Size vs Throughput:} Optimal batch size is different for different cases and can be explained individually for each case. When tables size is small and can fit in L1/L2/L3, the optimal batch size is 32 and if we are increasing the batch size more than 32 then there is a small dip in performance because of the increased cache contention due to increased batch size. However when the table size is bigger than the LLC, for every packet the fetch time is constant and we can increase the batch size to get the benefits of batching. In case of large table size, the optimal batch size is 128 in our case.
-%\\
-%\textbf{Table Size vs Throughput:} As mentioned in the eq \ref{compute_througput}, memory stall is one of the parameters which is affecting the application throughput. Contention for cache will increase with the increase in the number of entries in the lookup table and this will increase the fetch time for lookup data. So, total fetch time will be more for large table size and less for smaller table size. As explained in Eq \ref{cycles_stall}, we can hide the memory stalling by prefetching the data in the cache. If we can prefetch the data efficiently before the data is used by the application then the total stall time for the batch would decrease and performance of the application would increase.
-%
-%\subsubsection{Effect of Batching plus Prefetching}
-%\label{prefetchingsubsection}
-%With prefetching, we are trying to minimize the total stall time for the batch and we can see in the figure that there is a significant performance gain if we are using prefetching with batching. We can summarize the result in two main points. First, there should be a decline in the throughput with the increase in the number of entries and throughput of the application should be more when there are less number of entries in the table. For larger table size, data won't be present in the cache and application must stall on it. However, we are prefetching the data even before the data is used in the application and this prefetching of data is reducing the total stall cycles as described in Eq \ref{cycles_stall}. In case of batching plus prefetching both CPU and memory are working effectively and there are not stall in this case and this is the reason that the throughput of the application is stable and not varying much with the increase in the number of entries in the table.
-
-%Second, for each batch size, the relative throughput of the application will be dictated by the number of entries in the table. In actual, the results are quite opposite to the expectations and this is because total stall time reduction is dependent on effective prefetch distance. One batch size may not work for the different number of entries and relation between table size, batch size, and effective prefetch distance has been summarized in Section \ref{subbatching}. Let's explain with the help of an example, for 64 batch size the throughput of the application is more when there are 1 M and 16 M entries as compared to 2 K \& 16 K entries in the table. The data will be in L2/L3 cache for these many numbers of entries and due to large batch size, entries will be prefetched way before the data will be needed in the application. On the other hand for larger table sizes, larger batch size is suitable since the data will be fetched from the main memory which will take more number of cycles. For 2 K and 16 K entry table we tried to minimize the prefetch distance by using the sub-batch size of 32 and the application is performing better than the application with 1 M and 16 M entries. 
-%\textbf{Conclusion:} 
-%In case of batching only, the performance is decreasing with an increase in table size because of the increase in the stall time. We are using prefetching to minimize the stall time and in case of batching plus prefetching the throughput is not declining much due to increase in the table size. We can say that batching and prefetching is playing well together and due to this the throughput is stable even if we are increasing the table size.
-
-%\subsection{Sub-batching}
 \subsection{Performance model}
 We discuss a performance model to explain our experimental results. At a high-level,
 the system can be modeled as a queueing network, with three parallel relevant
@@ -203,27 +175,21 @@ The L2Fwd-crypto application shows minimum improvements, due to its compute-inte
 %In the applications, they are not exploiting batching \& prefetching and just with these optimizations there is a huge improvement.
 \\
 G-Opt is a previous effort at bridging the gap between CPU and GPU performance for packet processing
-applications. The G-Opt authors manually annotate code to identify expensive memory accesses, and use
-multi-threading and context-switching to hide the memory latency. There are two important ways in which
+applications. The G-Opt authors manually annotate code to identify expensive memory accesses and use
+multithreading and context-switching to hide the memory latency. There are two important ways in which
 our work differs from G-Opt: (1) our approach is largely automatic and works with a high-level
-program representation. (2) we employ batching and sub-batching instead of multi-threading, which
+program representation. (2) we employ batching and sub-batching instead of multithreading, which
 makes our approach more efficient as it avoids context-switching overheads.
 We report a 20\%, 15\%, 17\%, and 59\% improvement over G-Opt for L2Fwd, IPv4, IPv6, and NDN applications respectively,
 in head-to-head comparisons. We find that G-Opt authors did not systematically explore the space of
 all possible transformations, when compared with our work, perhaps due
 to the lack of a performance model. Our systematic exploration of $B$ and $b$, allows
 us to maximize the throughput, beyond previous work.
-%They are using both batching and prefetching, and their main aim was to make the results comparable to GPU. The difference is due to the batch size, they are not using the optimal batch size and we can see the performance gain by using the optimal batching size in Figure \ref{tablesize}.
-%\\
 
 Comparing with hand-optimized code available as a part of the DPDK distribution, we find that we are sometimes
 slightly worse (4\% worse for IPv4), and sometimes significantly better (20\% better for IPv6). It is not
-surprising that our compiler-based approach of systematic exploration across the parameter space, can perform
+surprising that our compiler-based approach of systematic exploration across the parameter space can perform
 better than hand-optimized code written by developers.
-%\textbf{Comparison with DPDK\cite{DPDK}:} For IPv4 DPDK is performing 4\% better than our code and for IPv6 we have a performance gain of 20\%. The result for IPv6 doesn't include the improvement we are gaining by TRIE compression, that will be reported later in this section.
-%\\
-%\\
-%\textbf{Conclusion:} By using the optimal batch size and right prefetch distance we are performing almost equal or better than other hand-tuned optimized code. Even if the results are equal we can say that our approach is better than hand-tuned one, because it is one-time efforts and can be used for wide variety of applications. Results in figure \ref{comparisonfigure} are for one core and we will show in Section \ref{scalability} that our applications are scaling linearly with the number of cores.
 
 \subsection{Scalability}
 \label{scalability}
@@ -242,16 +208,8 @@ is attributed to the fact that the same NICs are being used to both send and
 receive packets, resulting in complex scheduling dependencies at the PCIe level.
 IPv4 throughput hits the PCIe bandwidth limit in our experimental setup (the hash
 lookup algorithm for IPv4 is the fastest among all applications).
-IPv6 packet throughput is slightly lower than others, because it uses larger
+IPv6 packet throughput is slightly lower than others because it uses larger
 (78-byte) packets.
-
-%
-%With 4 cores we saturating 4 ports(4 x 10 Gbps) when the packet size is 64 bytes.
-%The theoretical limit for 4 NICs is 59 Mpps but we are getting 44 Mpps as shown in the graph. PCIe is the bottleneck in this case and not the applications. When one NIC is sending and receiving at both the port then it can reach up 22 Mpps and not theoretical maximum 29 Mpps. \cite{Zhou:2013:SHP:2535372.2535379} has also mentioned about this bottleneck in the paper.
-
-%There is not much to talk about L2Fwd and NDN application, these applications are scaling linearly. IPv6 is not reaching upto 44 Mpps with 4 cores and that is because of large packet size for IPv6. We are using 64 bytes packets for other applications but Pktgen-DPDK is generating 78 bytes packets for IPv6. Hence IPv6 application is also saturating the ports with 4 cores. The other interesting part of the graph is the IPv4 line, till 2 cores the application is scaling linearly and after that it is coming down. There is no more available bandwidth for the application and it is saturating it with three cores. 
-%\\
-%\textbf{Conclusion:}We can say two things about the result of this experiment. First, applications are scaling linearly with the number of cores and second, applications are saturating four 10 Gbps ports with four cores.
 
 \subsection{Latency}
 In all our experiments, the end-to-end latency of a packet can be at most $B$ times worse than optimal. Usually, trading-off
@@ -264,8 +222,6 @@ While we restricted our discussion to batching and sub-batching, compiler
 transformations can be much more sophisticated. For example, the choice
 of data-structure to maintain and lookup the table, is often critical
 to the CPU speed of the application.
-%If the application is CPU-bound, then
-%it makes sense to try and optimize the choice of data-structure.
 We believe that existing
 work in the realm of data-representation synthesis in programming languages
 \cite{data_representation_synthesis, concurrent_data_representation_synthesis},
@@ -283,22 +239,7 @@ table size), and these characteristics could change over time.
 We think that this argues for an automatic adaptive optimization engine, like the one
 we have prototyped inside P4C, to be able to efficiently utilize the available hardware
 resources.
-%In our L2 forwarding example, there are two table lookups, both of which can potentially result
-%in main-memory access (and CPU stalls). Indeed the CPU stalls only occur if the lookup table
-%cannot fit in memory {\em and} the entry being looked-up is not already present in the cache.
-%Both these criteria are impossible to judge statically, and an automatic compiler-based
-%approach enables online dynamic code regeneration to adapt to the workload needs.
 
-%\subsection{TRIE Compression}
-%In this experiment we enabled the DIR24-8\cite{Gupta98routinglookups} based DPDK LPM6 library to use TRIE compression. The number of steps involved in DIR24-8 based LPM6 matching algorithm is proportional to IPv6 prefix length and in each step, algorithm accesses a new TRIE node which is an expensive memory operation. In real world scenario, IPv6 prefixes can be stored in compressed form in TRIEs either because they are unique or because they have common prefixes. In compression algorithm, we have merged a child node with its parent if it is the only child of its parent.
-%\\
-%\textbf{Experiment:} We have populated 20,000 IPv6 prefixes, all having length 48, with varying degree of compression possible.
-%\\
-%\textbf{Results:} In the best case, when there were three lookups saving on an average, we have got 38\% higher throughput over DIR24-8 based TRIE and in the worst case, when there is no compression possible, compressed TRIE showed only a dip of 3.3\% in overall throughput. On an average, with 1.25 lookups saving, we got 16.1\% higher throughput than DPDK LPM6 lookup algorithm.
-%
-%
-%
-%\subsection{Scalability}
 \section{Related Work}
 \label{relatedwork}
 There has been a plethora of related work on CPU-based packet processing
@@ -310,8 +251,6 @@ show performance improvements over previous work. While our approach is aimed at
 specification, most previous works involved manual optimizations for individual applications. We have already compared our work
 with some of the most relevant previous work through our experiments.
 
-%by authors, however, these papers are determining the batch size by empirical analysis. \cite{189006, Zhou:2013:SHP:2535372.2535379} are exploiting the fact that CPU and Memory subsystem can work in parallel and memory stall can be minimized by issuing the software prefetches before actually using the data. However, it is difficult to use these manual optimizations each time we are writing a packet processing application.
-
 Previous work in compiler optimization has close parallels with our work too.
 Shangri-La et. al. \cite{Chen:2005:SAH:1065010.1065038} generate an
 optimized binary for a specialized {\em network processor}, and show that the generated binary works as
@@ -320,13 +259,8 @@ of splitting an application into parallel components to achieve high throughput.
 data-representation synthesis \cite{data_representation_synthesis, concurrent_data_representation_synthesis}
 involves automatically inferring the optimal data structures and schedule for a high-level program
 specification. Unlike this previous work, our focus on network processing pipelines on
-general-purpose hardware, enables
-more domain-specific optimizations, and deeper micro-architectural modeling for better
+general-purpose hardware enables more domain-specific optimizations and deeper micro-architectural modeling for better
 overall performance.
 
 While our initial efforts are aimed at optimization and performance modeling, we hope
 to extend this work, towards developing an adaptive optimizing compiler for packet-processing pipelines.
-
-%\section{Conclusion}
-%\label{section6} 
-%The goal of this paper is to find the efficient batch size and right prefetch distance to use the underlying hardware efficiently and to improve the application performance. In the evaluation section, we are showing that per core performance for different applications is on par with hand-tuned optimized applications and applications are scaling with the number of cores. It saves a lot of time and efforts, and we don't need to think about the code flow for different types of applications and the possible bugs due to manual intervention. We believe that DSLs won't be very useful if we are unable to develop good compilers. The actual power of DSLs can only be realized when the compilers can generate the optimized target which is on par with hand-tuned code.

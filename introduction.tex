@@ -1,6 +1,4 @@
 \section{Introduction}
-% The rapid advancements in networking have necessitated the development of many newer protocols and packet processing functionalities. The difficulty in programming and extension of traditional hardware routers has made software routers --packet processing software running on general purpose hardware- more popular. In effect, software routers have realized the modification of network functionality with a software upgrade, avoiding the burden of hardware developers in designing and developing newer hardware.
-
 Software defined networking is already mainstream. Newer protocols and innovative packet
 processing functionalities imply that
 newer packet processing pipelines are getting developed over time. Manually
@@ -11,8 +9,6 @@ for a simple packet-forwarding application on a modern multi-core machine; doing
 research for each separate (and potentially much more complex) packet processing pipeline
 seems impractical. Further, these optimizations need to be re-tuned for every different
 architecture.
-
-%The rapid advancements in networking have necessitated the development of many newer protocols and packet processing functionalities resulting the increase of length, complexity, and diversity of the code in software routers. Thus programming in low-level languages like C++ is equivalent to reinventing the wheel consuming time and effort of the programmer. The business of manual optimizations in the code further complicates the job of a programmer. For example, Routebricks achieved 24Gbps of IPv4 throughput on two quad-core Nehalem processors. But the authors had to do very careful manual tuning to achieve such performance. In spite of that, the other workloads deviating from the setup might take a significant performance hit.
 
 Domain specific languages like P4\cite{Bosshart:2014:PPP:2656877.2656890} and Click\cite{kohler2000click}, are intended
 to bridge this gap, by allowing manual specification of functionality using high-level constructs. In this way, several
@@ -37,15 +33,7 @@ cache-miss stalls. Finally, we rely on existing C compilers (e.g., gcc) to autom
 the generated code to efficiently utilize the CPU processor (e.g., by maximizing SIMD
 and instruction-level parallelism ILP). We experiment with several code configurations involving varying
 degrees of available parallelism to DMA channels, and to CPU-memory channels. We show
-improvements over previously published performance results for similar programs, and develop a model
+improvements over previously published performance results for similar programs and develop a model
 for reasoning about performance in this setting. We have integrated our model into the
 P4C compiler, to enable it to
 automatically optimize the example programs discussed in this paper.
-
-%The key issues in software routers are due to the overheads in memory stalls and redundant operations like function calls that waste CPU cycles. On Intel x86 platforms, memory access latency is 90-130 ns. It is often the case that ineffective coding styles cause more memory accesses than necessary thus increasing CPU cycles per packet.  In addition, multiple packets during processing pass through the same function flow. Thus there is a benefit in amortizing the overheads in function calls. In this work, we leverage batching as an efficient means to hide memory stalls and amortize redundant operations. We also demonstrate forwarding performance improvements by adding batching capabilities to the P4C compiler. The primary contributions of this paper are:
-
-%\begin{enumerate}
-%\item Developed a platform agnostic mathematical relation that allows one to investigate the benefits of batching and prefetching.
-%\item Extended the P4C compiler for the Intel x86 platform to generate router code. Our compiler generates batched code of the target router.
-%\item Detailed performance evaluation and comparison of popular network applications like L2fwd, IPv4, IPv6, NDN with other popular manually optimized applications.
-%\end{enumerate}
