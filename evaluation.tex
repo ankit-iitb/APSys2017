@@ -157,7 +157,7 @@ performance while generating code for packet processing pipelines.
 \subsection{Comparison with other related work}
 \label{comparisonexperiment}
 \begin{figure}[ht]
-\includegraphics[width = \linewidth]{Figures/comparison.png}
+\includegraphics[width = \linewidth]{Figures/appscmp.png}
 \caption{Comparison with other related work.}
 \label{comparisonfigure}
 \end{figure}
@@ -206,8 +206,7 @@ experimental results show that it cannot sustain this theoretical limit, and ins
 saturates at 44Mpps. This difference between theoretical and observed throughputs,
 is attributed to the fact that the same NICs are being used to both send and
 receive packets, resulting in complex scheduling dependencies at the PCIe level.
-IPv4 throughput hits the PCIe bandwidth limit in our experimental setup (the hash
-lookup algorithm for IPv4 is the fastest among all applications).
+IPv4 throughput hits the PCIe bandwidth limit in our experimental setup (the lookup algorithm for IPv4 is the fastest among all applications).
 IPv6 packet throughput is slightly lower than others because it uses larger
 (78-byte) packets.
 
